@@ -279,9 +279,9 @@ public partial class MainViewModel
             app.BytesReceived = received;
         }
 
-        // Total tunnel usage: use the authoritative VPN-interface counter,
-        // and also expose the attributed per-app sum so UI can show both
-        // values without ambiguity.
+        // Total tunnel usage: use the authoritative VPN-interface counter.
+        // Every visible "usage" counter in the app is based on tunneled bytes;
+        // direct/outside-tunnel bytes are kept only as a diagnostic signal.
         var (totalSent, totalReceived) = _trafficRouter.GetTotalVpnTraffic();
         long vpnTotal = totalSent + totalReceived;
         TotalTraffic = FormatBytes(vpnTotal);

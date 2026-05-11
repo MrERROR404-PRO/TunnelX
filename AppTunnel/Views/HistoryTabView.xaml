@@ -20,7 +20,7 @@
                 <StackPanel Grid.Row="0" Grid.Column="0">
                     <TextBlock Text="📜 تاریخچه اتصالات" FontSize="16" FontWeight="SemiBold"
                                Foreground="{StaticResource TextPrimaryBrush}"/>
-                    <TextBlock Text="سوابق اتصالات قبلی شما در این بخش نمایش داده می‌شود"
+                    <TextBlock Text="سوابق مصرف تونل در اتصال‌های قبلی نمایش داده می‌شود"
                                Foreground="{StaticResource TextSecondaryBrush}"
                                FontSize="11" Margin="0,4,0,0"/>
                 </StackPanel>
@@ -36,7 +36,7 @@
                         Padding="14,10" Margin="0,12,0,0">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
                                 FlowDirection="LeftToRight">
-                        <TextBlock Text="📊 مجموع مصرف داده: " FontSize="13"
+                        <TextBlock Text="📊 مجموع مصرف تونل: " FontSize="13"
                                    Foreground="{StaticResource TextSecondaryBrush}"
                                    FlowDirection="RightToLeft"/>
                         <TextBlock Text="{Binding TotalHistoryData}" FontSize="15"
@@ -92,7 +92,7 @@
                                             <TextBlock Text="{Binding DurationText}"
                                                        Foreground="{StaticResource SuccessBrush}"
                                                        FontSize="11"/>
-                                            <TextBlock Text="  •  📊 " FontSize="11"
+                                            <TextBlock Text="  •  📊 تونل " FontSize="11"
                                                        Foreground="{StaticResource TextSecondaryBrush}"/>
                                             <TextBlock Text="{Binding TotalDataText}"
                                                        Foreground="{StaticResource WarningBrush}"

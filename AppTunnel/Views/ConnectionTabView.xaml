@@ -297,7 +297,7 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Traffic -->
+                <!-- Tunnel Traffic -->
                 <Border Grid.Column="4" Background="#11FFFFFF" CornerRadius="10" Padding="10,10"
                         ToolTip="مجموع ترافیک ارسال و دریافت عبوری از تونل VPN (کل تونل)">
                     <StackPanel HorizontalAlignment="Center">
@@ -312,16 +312,16 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Server -->
+                <!-- Direct diagnostic -->
                 <Border Grid.Column="6" Background="#11FFFFFF" CornerRadius="10" Padding="10,10"
-                        ToolTip="ترافیک مستقیم خارج از تونل: شامل برنامه‌های غیرفعال، IPها و دامنه‌های وایت‌لیست‌شده و ترافیک سیستم">
+                        ToolTip="نمایش تشخیصی ترافیک خارج از تونل. این عدد در مصرف تونل و تاریخچه ثبت نمی‌شود.">
                     <StackPanel HorizontalAlignment="Center">
                         <TextBlock Text="📡" FontSize="14" HorizontalAlignment="Center"/>
                         <TextBlock Text="{Binding DirectTraffic}" FontSize="13"
                                    FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"
                                    HorizontalAlignment="Center" Margin="0,4,0,0"
                                    FlowDirection="LeftToRight"/>
-                        <TextBlock Text="مستقیم" FontSize="9"
+                        <TextBlock Text="خارج تونل" FontSize="9"
                                    Foreground="{StaticResource TextSecondaryBrush}"
                                    HorizontalAlignment="Center"/>
                     </StackPanel>

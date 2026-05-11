@@ -240,19 +240,19 @@ public partial class TrafficRouterService : IDisposable
             Interlocked.Read(ref _totalVpnBytesReceived));
 
     /// <summary>
-    /// Returns the sum of tunnel traffic attributed to currently-tracked apps.
+    /// Returns the sum of tunnel traffic attributed to app counters during the
+    /// current connection. This intentionally includes apps that were disabled
+    /// later in the same session, so per-app totals remain consistent with the
+    /// history and total tunnel counters.
     /// </summary>
     public (long sent, long received) GetTrackedAppsTraffic()
     {
         long sent = 0;
         long received = 0;
-        foreach (var appName in _targetExecutables.Keys)
+        foreach (var counter in _trafficCounters.Values)
         {
-            if (_trafficCounters.TryGetValue(appName, out var counter))
-            {
-                sent += Interlocked.Read(ref counter.BytesSent);
-                received += Interlocked.Read(ref counter.BytesReceived);
-            }
+            sent += Interlocked.Read(ref counter.BytesSent);
+            received += Interlocked.Read(ref counter.BytesReceived);
         }
         return (sent, received);
     }
