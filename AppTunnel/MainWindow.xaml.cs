@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
 using System.Windows.Media;
+using AppTunnel.Models;
 using AppTunnel.ViewModels;
 using AppTunnel.Helpers;
 using AppTunnel.Services;
@@ -16,6 +17,8 @@ public partial class MainWindow : Window
     private CancellationTokenSource _loadCts = new();
     private System.Windows.Forms.NotifyIcon? _trayIcon;
     private bool _isRealExit;
+    private ConnectionState _lastNotifiedConnectionState = ConnectionState.Disconnected;
+    private bool _updateNotificationShown;
 
     public MainWindow()
     {
@@ -69,7 +72,24 @@ public partial class MainWindow : Window
                     statusItem.Text = $"وضعیت: {_viewModel.StatusText}";
                 });
             }
+            else if (args.PropertyName == nameof(MainViewModel.ConnectionState))
+            {
+                Dispatcher.BeginInvoke(NotifyConnectionStateChanged);
+            }
+            else if (args.PropertyName == nameof(MainViewModel.IsUpdateAvailable))
+            {
+                Dispatcher.BeginInvoke(NotifyUpdateAvailable);
+            }
         };
+
+        var updateItem = new System.Windows.Forms.ToolStripMenuItem("بررسی بروزرسانی");
+        updateItem.Click += (_, _) =>
+        {
+            BringToForeground();
+            if (_viewModel.CheckForUpdatesCommand.CanExecute(null))
+                _viewModel.CheckForUpdatesCommand.Execute(null);
+        };
+        menu.Items.Add(updateItem);
 
         menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
 
@@ -134,6 +154,49 @@ public partial class MainWindow : Window
                 "برنامه در System Tray فعال است. برای نمایش دوبار کلیک کنید.",
                 System.Windows.Forms.ToolTipIcon.Info);
         }
+    }
+
+    private void NotifyConnectionStateChanged()
+    {
+        if (_trayIcon == null) return;
+
+        var state = _viewModel.ConnectionState;
+        if (state == _lastNotifiedConnectionState) return;
+        _lastNotifiedConnectionState = state;
+
+        switch (state)
+        {
+            case ConnectionState.Connected:
+                ShowTrayNotification("TunnelX متصل شد", _viewModel.StatusText,
+                    System.Windows.Forms.ToolTipIcon.Info);
+                break;
+            case ConnectionState.Disconnected:
+                ShowTrayNotification("TunnelX قطع شد", _viewModel.StatusText,
+                    System.Windows.Forms.ToolTipIcon.Info);
+                break;
+            case ConnectionState.Error:
+                ShowTrayNotification("خطا در اتصال TunnelX", _viewModel.StatusText,
+                    System.Windows.Forms.ToolTipIcon.Warning);
+                break;
+        }
+    }
+
+    private void NotifyUpdateAvailable()
+    {
+        if (_trayIcon == null || _updateNotificationShown || !_viewModel.IsUpdateAvailable)
+            return;
+
+        _updateNotificationShown = true;
+        ShowTrayNotification("بروزرسانی TunnelX آماده است",
+            _viewModel.UpdateStatusText,
+            System.Windows.Forms.ToolTipIcon.Info);
+    }
+
+    private void ShowTrayNotification(string title, string message, System.Windows.Forms.ToolTipIcon icon)
+    {
+        if (_trayIcon == null) return;
+        _trayIcon.Visible = true;
+        _trayIcon.ShowBalloonTip(3500, title, message, icon);
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)

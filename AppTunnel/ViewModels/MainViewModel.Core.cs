@@ -65,6 +65,8 @@ public partial class MainViewModel : INotifyPropertyChanged
         OpenGitHubCommand = new RelayCommand(_ => OpenExternalLink(AppInfo.GitHubUrl));
         OpenDonateCommand = new RelayCommand(_ => OpenExternalLink(AppInfo.PayPalDonateUrl));
         CopyDonationInfoCommand = new RelayCommand(_ => CopyDonationInfoToClipboard());
+        CheckForUpdatesCommand = new RelayCommand(_ => _ = CheckForUpdatesAsync(false), _ => !IsCheckingForUpdates);
+        OpenLatestReleaseCommand = new RelayCommand(_ => OpenExternalLink(LatestReleaseUrl), _ => !string.IsNullOrWhiteSpace(LatestReleaseUrl));
 
         _trafficRouter.TrafficUpdated += OnTrafficUpdated;
 
@@ -88,6 +90,7 @@ public partial class MainViewModel : INotifyPropertyChanged
         LoadExcludes();
         LoadIncludes();
         LoadHistory();
+        _ = CheckForUpdatesAsync(true);
     }
 
     #region Properties
@@ -250,6 +253,59 @@ public partial class MainViewModel : INotifyPropertyChanged
     public string AppLicenseText => AppInfo.LicenseName;
     public string DonatePayPalText => $"پی‌پل: {AppInfo.PayPalEmail}";
     public string CryptoDonationText => AppInfo.CryptoDonationText;
+
+    private bool _isCheckingForUpdates;
+    public bool IsCheckingForUpdates
+    {
+        get => _isCheckingForUpdates;
+        set
+        {
+            if (_isCheckingForUpdates == value) return;
+            _isCheckingForUpdates = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(UpdateButtonText));
+            CommandManager.InvalidateRequerySuggested();
+        }
+    }
+
+    private bool _isUpdateAvailable;
+    public bool IsUpdateAvailable
+    {
+        get => _isUpdateAvailable;
+        set
+        {
+            if (_isUpdateAvailable == value) return;
+            _isUpdateAvailable = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private string _updateStatusText = "برای بررسی نسخه جدید، دکمه بررسی بروزرسانی را بزنید.";
+    public string UpdateStatusText
+    {
+        get => _updateStatusText;
+        set
+        {
+            if (_updateStatusText == value) return;
+            _updateStatusText = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private string _latestReleaseUrl = AppInfo.LatestReleaseUrl;
+    public string LatestReleaseUrl
+    {
+        get => _latestReleaseUrl;
+        set
+        {
+            if (_latestReleaseUrl == value) return;
+            _latestReleaseUrl = value;
+            OnPropertyChanged();
+            CommandManager.InvalidateRequerySuggested();
+        }
+    }
+
+    public string UpdateButtonText => IsCheckingForUpdates ? "در حال بررسی..." : "بررسی بروزرسانی";
 
     public string ConnectButtonText => _connectionState switch
     {
@@ -619,6 +675,8 @@ public partial class MainViewModel : INotifyPropertyChanged
     public ICommand OpenGitHubCommand { get; }
     public ICommand OpenDonateCommand { get; }
     public ICommand CopyDonationInfoCommand { get; }
+    public ICommand CheckForUpdatesCommand { get; }
+    public ICommand OpenLatestReleaseCommand { get; }
 
     #endregion
 
@@ -655,6 +713,61 @@ public partial class MainViewModel : INotifyPropertyChanged
         catch (Exception ex)
         {
             Logger.Warning($"[UI] Copy donation info failed: {ex.Message}");
+        }
+    }
+
+    private async Task CheckForUpdatesAsync(bool silent)
+    {
+        if (IsCheckingForUpdates) return;
+
+        try
+        {
+            IsCheckingForUpdates = true;
+            if (!silent)
+                UpdateStatusText = "در حال بررسی آخرین نسخه در GitHub...";
+
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            var latest = await GitHubReleaseChecker.GetLatestReleaseAsync(cts.Token);
+            if (latest == null)
+            {
+                if (!silent)
+                    UpdateStatusText = "بررسی نسخه جدید ناموفق بود. اتصال اینترنت یا GitHub را بررسی کنید.";
+                Logger.Warning("[UPDATE] Latest release check failed");
+                return;
+            }
+
+            LatestReleaseUrl = latest.Url;
+            var currentVersion = System.Reflection.Assembly.GetExecutingAssembly()
+                .GetName().Version ?? new Version(0, 0, 0);
+            var current = new Version(currentVersion.Major, currentVersion.Minor, currentVersion.Build);
+
+            if (latest.Version > current)
+            {
+                IsUpdateAvailable = true;
+                UpdateStatusText = $"نسخه جدید آماده است: {latest.TagName} - برای دانلود از GitHub باز کنید.";
+                Logger.Info($"[UPDATE] New version available: current={current} latest={latest.TagName}");
+                return;
+            }
+
+            IsUpdateAvailable = false;
+            UpdateStatusText = $"TunnelX به‌روز است. نسخه فعلی: {AppInfo.VersionText}";
+            Logger.Info($"[UPDATE] App is up to date: current={current} latest={latest.TagName}");
+        }
+        catch (OperationCanceledException)
+        {
+            if (!silent)
+                UpdateStatusText = "بررسی بروزرسانی به زمان مجاز نرسید.";
+            Logger.Warning("[UPDATE] Latest release check timed out");
+        }
+        catch (Exception ex)
+        {
+            if (!silent)
+                UpdateStatusText = $"بررسی بروزرسانی ناموفق بود: {ex.Message}";
+            Logger.Warning($"[UPDATE] Latest release check failed: {ex.Message}");
+        }
+        finally
+        {
+            IsCheckingForUpdates = false;
         }
     }
 

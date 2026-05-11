@@ -102,6 +102,41 @@
                 </Grid>
             </Border>
 
+            <!-- Updates -->
+            <Border Style="{StaticResource CardPanel}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="بروزرسانی"/>
+                        <TextBlock Text="{Binding UpdateStatusText}"
+                                   FontSize="11"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   TextWrapping="Wrap"
+                                   LineHeight="18"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2"
+                                Orientation="Vertical"
+                                VerticalAlignment="Center"
+                                MinWidth="150">
+                        <Button Style="{StaticResource SecondaryButton}"
+                                Content="{Binding UpdateButtonText}"
+                                Command="{Binding CheckForUpdatesCommand}"
+                                Padding="14,8"/>
+                        <Button Style="{StaticResource PrimaryButton}"
+                                Content="باز کردن صفحه انتشار"
+                                Command="{Binding OpenLatestReleaseCommand}"
+                                Padding="14,8"
+                                Margin="0,8,0,0"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
             <!-- Quick Path -->
             <Border Style="{StaticResource CardPanel}">
                 <StackPanel>
