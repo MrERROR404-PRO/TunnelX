@@ -1,66 +1,74 @@
+<div dir="rtl" align="right">
+
 # TunnelX
 
-فارسی | [English](README.md)
+فارسی | <span dir="ltr">[English](README.md)</span>
 
-TunnelX یک نرم‌افزار آزاد و رایگان برای ویندوز است که توسط **MaxFan** ساخته شده و برای مدیریت تونل، VPN و Split Tunneling استفاده می‌شود. این برنامه می‌تواند ترافیک برنامه‌های انتخاب‌شده، مقصدهای مشخص، یا کل سیستم را از تونل عبور دهد و هم‌زمان مسیر عادی شبکه را برای مقصدهای محلی یا مستثنی‌شده حفظ کند.
+<span dir="ltr">TunnelX</span> یک نرم‌افزار آزاد و رایگان برای ویندوز است که توسط **<span dir="ltr">MaxFan</span>** ساخته شده و برای مدیریت تونل، وی‌پی‌ان و <span dir="ltr">Split Tunneling</span> استفاده می‌شود. این برنامه می‌تواند ترافیک برنامه‌های انتخاب‌شده، مقصدهای مشخص، یا کل سیستم را از تونل عبور دهد و هم‌زمان مسیر عادی شبکه را برای مقصدهای محلی یا مستثنی‌شده حفظ کند.
 
-> وضعیت پروژه: پیش‌انتشار. قبل از انتشار عمومی فایل اجرایی، نکات ساخت و انتشار را در `docs/BUILD.md` بررسی کنید.
+> وضعیت پروژه: پیش‌انتشار. قبل از انتشار عمومی فایل اجرایی، نکات ساخت و انتشار را در <span dir="ltr">`docs/BUILD.md`</span> بررسی کنید.
 
 ## کاربرد برنامه
 
-TunnelX برای زمانی ساخته شده که کاربر نمی‌خواهد تمام ترافیک سیستم از VPN عبور کند. با این برنامه می‌توان فقط برنامه‌هایی مثل مرورگر، تلگرام، ابزارهای توسعه یا برنامه‌های مشخص دیگر را وارد تونل کرد و بقیه ترافیک سیستم را روی اینترنت عادی نگه داشت. همچنین در صورت نیاز، حالت Full-route برای عبور کل سیستم از تونل در دسترس است.
+<span dir="ltr">TunnelX</span> برای زمانی ساخته شده که کاربر نمی‌خواهد تمام ترافیک سیستم از وی‌پی‌ان عبور کند. با این برنامه می‌توان فقط برنامه‌هایی مثل مرورگر، تلگرام، ابزارهای توسعه یا برنامه‌های مشخص دیگر را وارد تونل کرد و بقیه ترافیک سیستم را روی اینترنت عادی نگه داشت. همچنین در صورت نیاز، حالت <span dir="ltr">Full-route</span> برای عبور کل سیستم از تونل در دسترس است.
 
 ## قابلیت‌ها
 
-- Split tunneling بر اساس برنامه‌های انتخاب‌شده در ویندوز
-- حالت Full-route برای تونل کردن کل سیستم
-- پشتیبانی از جریان‌های V2Ray بر پایه Xray-core و sing-box
-- پروکسی SOCKS5 محلی روی `127.0.0.1` برای ابزارهایی که تنظیم پروکسی داخلی دارند
-- تغییر مسیر DNS، مسدودسازی IPv6، محافظ نشت، عیب‌یابی route و تاریخچه مصرف تونل
+- <span dir="ltr">Split tunneling</span> بر اساس برنامه‌های انتخاب‌شده در ویندوز
+- حالت <span dir="ltr">Full-route</span> برای تونل کردن کل سیستم
+- پشتیبانی از جریان‌های <span dir="ltr">V2Ray</span> بر پایه <span dir="ltr">Xray-core</span> و <span dir="ltr">sing-box</span>
+- پروکسی <span dir="ltr">SOCKS5</span> محلی روی <span dir="ltr">`127.0.0.1`</span> برای ابزارهایی که تنظیم پروکسی داخلی دارند
+- تغییر مسیر <span dir="ltr">DNS</span>، مسدودسازی <span dir="ltr">IPv6</span>، محافظ نشت، عیب‌یابی <span dir="ltr">route</span> و تاریخچه مصرف تونل
 - رابط کاربری فارسی‌محور برای ویندوز
 
 ## دانلود
 
-فایل‌های آماده اجرا از بخش Releases پروژه منتشر می‌شوند:
+فایل‌های آماده اجرا از بخش <span dir="ltr">Releases</span> پروژه منتشر می‌شوند:
 
-[دانلود آخرین نسخه از GitHub Releases](https://github.com/MaxiFan/TunnelX/releases/latest)
+<span dir="ltr">[دانلود آخرین نسخه از GitHub Releases](https://github.com/MaxiFan/TunnelX/releases/latest)</span>
 
-نسخه پیشنهادی برای کاربران، فایل standalone و self-contained است. این نسخه به نصب جداگانه .NET Runtime نیاز ندارد.
+نسخه پیشنهادی برای کاربران، فایل <span dir="ltr">standalone</span> و <span dir="ltr">self-contained</span> است. این نسخه به نصب جداگانه <span dir="ltr">.NET Runtime</span> نیاز ندارد.
 
 ## نیازمندی‌های اجرا
 
-- Windows 10/11
-- ویندوز ۶۴ بیتی (`win-x64`)
-- دسترسی Administrator هنگام اجرا، چون مدیریت route و packet interception به سطح دسترسی بالا نیاز دارد
+- ویندوز <span dir="ltr">10/11</span>
+- ویندوز ۶۴ بیتی: <span dir="ltr">`win-x64`</span>
+- دسترسی <span dir="ltr">Administrator</span> هنگام اجرا، چون مدیریت <span dir="ltr">route</span> و <span dir="ltr">packet interception</span> به سطح دسترسی بالا نیاز دارد
 - نسخه‌های ۳۲ بیتی ویندوز در حال حاضر پشتیبانی نمی‌شوند
 
 ## ساخت از سورس
 
-برای توسعه یا ساخت دستی، .NET 8 SDK لازم است:
+برای توسعه یا ساخت دستی، <span dir="ltr">.NET 8 SDK</span> لازم است:
+
+</div>
 
 ```powershell
 dotnet build AppTunnel.sln -c Release
 dotnet publish AppTunnel\AppTunnel.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -p:DebugSymbols=false
 ```
 
-جزئیات بیشتر در `docs/BUILD.md` آمده است. ایده‌ها و برنامه‌های آینده در `docs/ROADMAP.md` نگهداری می‌شوند.
+<div dir="rtl" align="right">
+
+جزئیات بیشتر در <span dir="ltr">`docs/BUILD.md`</span> آمده است. ایده‌ها و برنامه‌های آینده در <span dir="ltr">`docs/ROADMAP.md`</span> نگهداری می‌شوند.
 
 ## مجوز
 
-TunnelX تحت مجوز **GPL-3.0-or-later** منتشر شده است. اجزای شخص ثالث همراه پروژه مجوزهای خودشان را دارند. برای جزئیات بیشتر:
+<span dir="ltr">TunnelX</span> تحت مجوز **<span dir="ltr">GPL-3.0-or-later</span>** منتشر شده است. اجزای شخص ثالث همراه پروژه مجوزهای خودشان را دارند. برای جزئیات بیشتر:
 
-- `LICENSE`
-- `THIRD_PARTY_NOTICES.md`
-- `docs/LEGAL.md`
+- <span dir="ltr">`LICENSE`</span>
+- <span dir="ltr">`THIRD_PARTY_NOTICES.md`</span>
+- <span dir="ltr">`docs/LEGAL.md`</span>
 
 ## حمایت مالی
 
-TunnelX رایگان است. حمایت مالی کاملا اختیاری است و فقط به نگهداری و توسعه پروژه کمک می‌کند.
+<span dir="ltr">TunnelX</span> رایگان است. حمایت مالی کاملا اختیاری است و فقط به نگهداری و توسعه پروژه کمک می‌کند.
 
-گزینه‌های حمایت از طریق GitHub Sponsors/Funding یا فایل `docs/DONATE.md` در دسترس هستند.
+گزینه‌های حمایت از طریق <span dir="ltr">GitHub Sponsors/Funding</span> یا فایل <span dir="ltr">`docs/DONATE.md`</span> در دسترس هستند.
 
 ## نکته ایمنی و سلب مسئولیت
 
-TunnelX یک ابزار شبکه، تونل و مدیریت مسیر است. فقط در محیط‌هایی از آن استفاده کنید که اجازه استفاده از VPN، پروکسی، packet capture و تغییر route را دارید. این پروژه مشاوره حقوقی ارائه نمی‌دهد.
+<span dir="ltr">TunnelX</span> یک ابزار شبکه، تونل و مدیریت مسیر است. فقط در محیط‌هایی از آن استفاده کنید که اجازه استفاده از وی‌پی‌ان، پروکسی، <span dir="ltr">packet capture</span> و تغییر <span dir="ltr">route</span> را دارید. این پروژه مشاوره حقوقی ارائه نمی‌دهد.
 
 این نرم‌افزار همان‌گونه که هست ارائه می‌شود، بدون هیچ‌گونه ضمانت، و نگهدارنده پروژه تعهدی برای ارائه بروزرسانی، رفع اشکال، پشتیبانی یا ادامه دسترسی دائمی ندارد.
+
+</div>
