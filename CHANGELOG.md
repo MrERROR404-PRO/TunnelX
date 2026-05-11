@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 1.2.23
+
+- Added GitHub release checking from the Help tab.
+- Added automatic tray notification when a newer release is available.
+- Added tray notifications for connection, disconnection, and connection errors.
+- Added a tray menu action for checking updates.
+- Moved remaining future VPN-manager improvements into the public roadmap.
+
 ## 1.2.22
 
 - Fixed Help page data binding so GitHub and donation buttons work.
