@@ -28,22 +28,24 @@ TunnelX-v1.2.23-standalone-compressed.exe
 
 Public releases are published by `.github/workflows/release.yml`.
 
-The release workflow:
+The normal release flow is:
 
-- runs on `windows-latest` with .NET 8;
-- accepts tags in `vMAJOR.MINOR.PATCH` format, such as `v1.2.23`;
-- verifies that the tag version matches `<Version>` in `AppTunnel/AppTunnel.csproj`;
+1. Add user-facing changes under `## Unreleased` in `CHANGELOG.md` when there are curated release notes to publish.
+2. Run the `release` workflow from the GitHub Actions tab.
+3. Either provide an explicit version like `1.2.24`, or leave the version empty and choose `patch`, `minor`, or `major`.
+
+The workflow then:
+
+- updates `<Version>`, `<AssemblyVersion>`, and `<FileVersion>` in `AppTunnel/AppTunnel.csproj`;
+- moves `CHANGELOG.md` notes from `## Unreleased` into a dated version section;
+- generates release notes from recent commit subjects if `## Unreleased` is empty;
+- commits the release metadata update;
+- creates and pushes the `vMAJOR.MINOR.PATCH` tag;
 - builds and publishes the `win-x64` self-contained single-file executable;
-- attaches `TunnelX-vX.Y.Z-standalone-compressed.exe` and a `.sha256` checksum to the GitHub Release.
+- attaches `TunnelX-vX.Y.Z-standalone-compressed.exe` and a `.sha256` checksum to the GitHub Release;
+- adds build provenance to the Release notes, including the GitHub Actions run URL, commit, and checksum.
 
-To publish a release from the command line:
-
-```powershell
-git tag v1.2.23
-git push origin v1.2.23
-```
-
-The same workflow can also be run manually from GitHub Actions by providing the release tag.
+Only repository users with write access can run the manual release workflow.
 
 ## 32-bit Windows
 

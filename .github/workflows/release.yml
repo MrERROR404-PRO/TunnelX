@@ -1,59 +1,166 @@
 name: release
 
 on:
-  push:
-    tags:
-      - "v*.*.*"
   workflow_dispatch:
     inputs:
-      tag:
-        description: "Release tag to publish, for example v1.2.23"
-        required: true
+      version:
+        description: "Release version, for example 1.2.24 or v1.2.24. Leave empty to bump automatically."
+        required: false
         type: string
+      bump:
+        description: "Version bump to use when version is empty."
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      draft:
+        description: "Create the GitHub Release as a draft."
+        required: true
+        default: false
+        type: boolean
+      prerelease:
+        description: "Mark the GitHub Release as a prerelease."
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: write
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
   windows:
-    name: Publish Windows release
+    name: Prepare and publish Windows release
     runs-on: windows-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: "8.0.x"
 
-      - name: Resolve release metadata
+      - name: Prepare release metadata
         id: meta
         shell: pwsh
         run: |
-          $tag = "${{ github.ref_name }}"
-          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
-            $tag = "${{ inputs.tag }}"
-          }
-
-          if ($tag -notmatch '^v\d+\.\d+\.\d+$') {
-            throw "Release tag must use vMAJOR.MINOR.PATCH format. Received: $tag"
-          }
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           [xml]$project = Get-Content "AppTunnel/AppTunnel.csproj"
-          $projectVersion = $project.Project.PropertyGroup.Version
-          $tagVersion = $tag.TrimStart("v")
+          $currentVersion = [version]$project.Project.PropertyGroup.Version
+          $requestedVersion = "${{ inputs.version }}".Trim()
 
-          if ($projectVersion -ne $tagVersion) {
-            throw "Tag version ($tagVersion) does not match AppTunnel.csproj Version ($projectVersion)."
+          if ($requestedVersion) {
+            $requestedVersion = $requestedVersion.TrimStart("v")
+            if ($requestedVersion -notmatch '^\d+\.\d+\.\d+$') {
+              throw "Version must use MAJOR.MINOR.PATCH format. Received: $requestedVersion"
+            }
+            $nextVersion = [version]$requestedVersion
+          }
+          else {
+            $bump = "${{ inputs.bump }}"
+            if ($bump -eq "major") {
+              $nextVersion = [version]::new($currentVersion.Major + 1, 0, 0)
+            }
+            elseif ($bump -eq "minor") {
+              $nextVersion = [version]::new($currentVersion.Major, $currentVersion.Minor + 1, 0)
+            }
+            else {
+              $nextVersion = [version]::new($currentVersion.Major, $currentVersion.Minor, $currentVersion.Build + 1)
+            }
+          }
+
+          if ($nextVersion -le $currentVersion) {
+            throw "Release version ($nextVersion) must be greater than current project version ($currentVersion)."
+          }
+
+          $version = $nextVersion.ToString(3)
+          $tag = "v$version"
+
+          git fetch --tags origin
+          if (git rev-parse -q --verify "refs/tags/$tag") {
+            throw "Tag $tag already exists."
           }
 
           $artifactName = "TunnelX-$tag-standalone-compressed.exe"
 
+          "version=$version" >> $env:GITHUB_OUTPUT
           "tag=$tag" >> $env:GITHUB_OUTPUT
-          "version=$tagVersion" >> $env:GITHUB_OUTPUT
           "artifact_name=$artifactName" >> $env:GITHUB_OUTPUT
+
+      - name: Update version and changelog
+        id: release_notes
+        shell: pwsh
+        run: |
+          $version = "${{ steps.meta.outputs.version }}"
+          $tag = "${{ steps.meta.outputs.tag }}"
+          $date = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd")
+
+          [xml]$project = Get-Content "AppTunnel/AppTunnel.csproj"
+          $project.Project.PropertyGroup.Version = $version
+          $project.Project.PropertyGroup.AssemblyVersion = "$version.0"
+          $project.Project.PropertyGroup.FileVersion = "$version.0"
+          $project.Save((Resolve-Path "AppTunnel/AppTunnel.csproj"))
+
+          $changelogPath = "CHANGELOG.md"
+          $changelog = Get-Content -Raw -LiteralPath $changelogPath
+          if ($changelog -notmatch '(?m)^## Unreleased\s*$') {
+            throw "CHANGELOG.md must contain a '## Unreleased' section."
+          }
+
+          $unreleasedMatch = [regex]::Match($changelog, '(?ms)^## Unreleased\s*(?<notes>.*?)(?=^##\s|\z)')
+          $notes = $unreleasedMatch.Groups["notes"].Value.Trim()
+
+          if (-not $notes) {
+            $previousTag = git describe --tags --abbrev=0 2>$null
+            if ($LASTEXITCODE -eq 0 -and $previousTag) {
+              $subjects = git log "$previousTag..HEAD" --pretty=format:"- %s"
+            }
+            else {
+              $subjects = git log --pretty=format:"- %s"
+            }
+
+            $notes = ($subjects | Where-Object { $_ -and ($_ -notmatch '^- Prepare release v') }) -join "`n"
+            if (-not $notes) {
+              $notes = "- Maintenance release."
+            }
+          }
+
+          $releaseHeading = "## $version - $date"
+          $replacement = "## Unreleased`n`n$releaseHeading`n`n$notes`n`n"
+          $changelog = [regex]::Replace($changelog, '(?ms)^## Unreleased\s*(?<notes>.*?)(?=^##\s|\z)', $replacement, 1)
+          Set-Content -Encoding UTF8 -LiteralPath $changelogPath -Value $changelog
+
+          $notesFile = Join-Path $env:RUNNER_TEMP "release-notes.md"
+          $notes | Set-Content -Encoding UTF8 -LiteralPath $notesFile
+
+          "notes_file=$notesFile" >> $env:GITHUB_OUTPUT
+
+      - name: Commit release changes
+        id: release_commit
+        shell: pwsh
+        run: |
+          $tag = "${{ steps.meta.outputs.tag }}"
+
+          git add AppTunnel/AppTunnel.csproj CHANGELOG.md
+          git commit -m "Prepare release $tag"
+          $releaseSha = git rev-parse HEAD
+          git tag $tag
+          git push origin HEAD:${{ github.ref_name }}
+          git push origin $tag
+
+          "sha=$releaseSha" >> $env:GITHUB_OUTPUT
 
       - name: Restore
         run: dotnet restore AppTunnel.sln
@@ -109,36 +216,12 @@ jobs:
         shell: pwsh
         run: |
           $tag = "${{ steps.meta.outputs.tag }}"
-          $asset = "${{ steps.package.outputs.asset }}"
-          $checksum = "${{ steps.package.outputs.checksum }}"
           $title = "TunnelX $tag"
           $runUrl = "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           $sha256 = "${{ steps.package.outputs.sha256 }}".ToUpperInvariant()
           $artifactName = "${{ steps.meta.outputs.artifact_name }}"
 
-          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
-            git fetch --tags origin
-            if (-not (git tag --list $tag)) {
-              git tag $tag
-              git push origin $tag
-            }
-          }
-
-          gh release view $tag *> $null
-          if ($LASTEXITCODE -eq 0) {
-            gh release upload $tag $asset $checksum --clobber
-            gh release edit $tag --title $title --latest
-          }
-          else {
-            gh release create $tag `
-              $asset `
-              $checksum `
-              --title $title `
-              --generate-notes `
-              --latest
-          }
-
-          $body = gh release view $tag --json body --jq .body
+          $notes = Get-Content -Raw -LiteralPath "${{ steps.release_notes.outputs.notes_file }}"
           $provenanceLines = @(
             "<!-- release-provenance:start -->",
             "## Build provenance",
@@ -146,19 +229,29 @@ jobs:
             "- Built and uploaded by GitHub Actions.",
             "- Workflow: ``release``",
             "- Run: $runUrl",
-            "- Commit: ``${{ github.sha }}``",
+            "- Commit: ``${{ steps.release_commit.outputs.sha }}``",
             "- SHA256: ``$sha256  $artifactName``",
             "<!-- release-provenance:end -->"
           )
-          $provenance = $provenanceLines -join "`n"
+          $notes = "$($notes.Trim())`n`n$($provenanceLines -join "`n")"
 
-          if ($body -match '(?s)<!-- release-provenance:start -->.*<!-- release-provenance:end -->') {
-            $body = $body -replace '(?s)<!-- release-provenance:start -->.*<!-- release-provenance:end -->', $provenance
+          $notesFile = Join-Path $env:RUNNER_TEMP "final-release-notes.md"
+          $notes | Set-Content -Encoding UTF8 -LiteralPath $notesFile
+
+          $releaseArgs = @(
+            "release", "create", $tag,
+            "${{ steps.package.outputs.asset }}",
+            "${{ steps.package.outputs.checksum }}",
+            "--title", $title,
+            "--notes-file", $notesFile,
+            "--latest"
+          )
+
+          if ("${{ inputs.draft }}" -eq "true") {
+            $releaseArgs += "--draft"
           }
-          else {
-            $body = "$body`n`n$provenance"
+          if ("${{ inputs.prerelease }}" -eq "true") {
+            $releaseArgs += "--prerelease"
           }
 
-          $notesFile = Join-Path $env:RUNNER_TEMP "release-notes.md"
-          $body | Set-Content -Encoding UTF8 -LiteralPath $notesFile
-          gh release edit $tag --notes-file $notesFile
+          gh @releaseArgs
