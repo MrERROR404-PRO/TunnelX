@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
@@ -21,19 +20,16 @@
     <PackageProjectUrl>https://github.com/MaxiFan/TunnelX</PackageProjectUrl>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
     <NeutralLanguage>fa-IR</NeutralLanguage>
-    
     <!-- Version Management -->
-    <Version>1.2.23</Version>
-    <AssemblyVersion>1.2.23.0</AssemblyVersion>
-    <FileVersion>1.2.23.0</FileVersion>
+    <Version>1.2.24</Version>
+    <AssemblyVersion>1.2.24.0</AssemblyVersion>
+    <FileVersion>1.2.24.0</FileVersion>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
     <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
   </ItemGroup>
-
   <!-- WinDivert native binaries — copied to output directory on build -->
   <ItemGroup>
     <None Include="NativeLibs\x64\WinDivert.dll">
@@ -78,18 +74,15 @@
       <Link>wintun.dll</Link>
     </None>
   </ItemGroup>
-
   <!-- Embedded Persian Font -->
   <ItemGroup>
     <Resource Include="Fonts\Vazirmatn-Regular.ttf" />
     <Resource Include="app.ico" />
   </ItemGroup>
-
   <!-- Post-Build: no-op for Releases folder.
        The standalone exe (built via 'dotnet publish') already embeds all native libs
        (WinDivert.dll, WinDivert64.sys, wintun.dll, sing-box.exe) and extracts them on
        first run. Nothing needs to be copied to Releases by the regular build. -->
   <Target Name="CopyVersionedRelease" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
   </Target>
-
 </Project>

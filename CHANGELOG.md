@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.2.24 - 2026-05-12
+
 - Added README screenshots in English and Persian.
 - Added automated GitHub Actions release publishing with version bumping, changelog-based release notes, checksums, and build provenance.
 
@@ -26,3 +28,4 @@
 - Added in-app GitHub and donation links.
 - Added project metadata for MaxFan and GPL-3.0-or-later licensing.
 - Improved leak logging and traffic accounting in recent internal builds.
+
