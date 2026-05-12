@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added README screenshots in English and Persian.
+- Added automated GitHub Actions release publishing with version bumping, changelog-based release notes, checksums, and build provenance.
+
 ## 1.2.23
 
 - Added GitHub release checking from the Help tab.
