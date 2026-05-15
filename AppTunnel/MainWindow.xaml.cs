@@ -150,8 +150,8 @@ public partial class MainWindow : Window
             _trayIcon.Visible = true;
             _trayIcon.ShowBalloonTip(
                 2000,
-                "TunnelX",
-                "برنامه در System Tray فعال است. برای نمایش دوبار کلیک کنید.",
+                "TunnelX در پس‌زمینه فعال است",
+                "برای باز کردن پنجره، روی آیکن کنار ساعت دوبار کلیک کنید.",
                 System.Windows.Forms.ToolTipIcon.Info);
         }
     }
@@ -167,15 +167,15 @@ public partial class MainWindow : Window
         switch (state)
         {
             case ConnectionState.Connected:
-                ShowTrayNotification("TunnelX متصل شد", _viewModel.StatusText,
+                ShowTrayNotification("تونل فعال شد", GetConnectedTrayMessage(),
                     System.Windows.Forms.ToolTipIcon.Info);
                 break;
             case ConnectionState.Disconnected:
-                ShowTrayNotification("TunnelX قطع شد", _viewModel.StatusText,
+                ShowTrayNotification("تونل خاموش شد", "ارتباط امن متوقف شده و ترافیک دیگر از TunnelX عبور نمی‌کند.",
                     System.Windows.Forms.ToolTipIcon.Info);
                 break;
             case ConnectionState.Error:
-                ShowTrayNotification("خطا در اتصال TunnelX", _viewModel.StatusText,
+                ShowTrayNotification("اتصال برقرار نشد", GetErrorTrayMessage(),
                     System.Windows.Forms.ToolTipIcon.Warning);
                 break;
         }
@@ -187,9 +187,29 @@ public partial class MainWindow : Window
             return;
 
         _updateNotificationShown = true;
-        ShowTrayNotification("بروزرسانی TunnelX آماده است",
-            _viewModel.UpdateStatusText,
+        ShowTrayNotification("نسخه جدید آماده است",
+            "از منوی System Tray یا بخش بروزرسانی، صفحه دانلود TunnelX را باز کنید.",
             System.Windows.Forms.ToolTipIcon.Info);
+    }
+
+    private string GetConnectedTrayMessage()
+    {
+        var profileName = _viewModel.SelectedProfileName;
+        if (!string.IsNullOrWhiteSpace(profileName))
+            return $"پروفایل «{profileName}» فعال است و ترافیک انتخاب‌شده از تونل عبور می‌کند.";
+
+        return "ترافیک انتخاب‌شده از TunnelX عبور می‌کند.";
+    }
+
+    private string GetErrorTrayMessage()
+    {
+        var status = _viewModel.StatusText?.Trim();
+        if (string.IsNullOrWhiteSpace(status) || status == "خطا")
+            return "جزئیات خطا را در پنجره برنامه یا لاگ‌ها بررسی کنید.";
+
+        return status.StartsWith("خطا", StringComparison.Ordinal)
+            ? status
+            : $"جزئیات: {status}";
     }
 
     private void ShowTrayNotification(string title, string message, System.Windows.Forms.ToolTipIcon icon)

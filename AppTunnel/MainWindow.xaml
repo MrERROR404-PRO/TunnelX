@@ -6,8 +6,8 @@
         xmlns:vm="clr-namespace:AppTunnel.ViewModels"
         xmlns:model="clr-namespace:AppTunnel.Models"
         Title="TunnelX — Split Traffic Per App"
-        Width="580" Height="760"
-        MinWidth="540" MinHeight="680"
+        Width="620" Height="760"
+        MinWidth="580" MinHeight="680"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
         AllowsTransparency="True"
@@ -169,30 +169,42 @@
             <TabControl Grid.Row="0" Style="{StaticResource ModernTabControl}" Margin="8,6,8,6">
 
             <!-- ███ TAB 1: CONNECTION ███ -->
-            <TabItem Style="{StaticResource ModernTabItem}">
+            <TabItem Style="{StaticResource ModernTabItem}" ToolTip="وضعیت اتصال VPN و کنترل اتصال">
                 <TabItem.Header>
-                    <TextBlock Text="⚡ اتصال"/>
+                    <StackPanel>
+                        <TextBlock Text="⚡" FontSize="13" HorizontalAlignment="Center"/>
+                        <TextBlock Text="اتصال VPN" FontSize="10" TextAlignment="Center"/>
+                    </StackPanel>
                 </TabItem.Header>
                 <views:ConnectionTabView/>
             </TabItem>
-            <TabItem Style="{StaticResource ModernTabItem}">
+            <TabItem Style="{StaticResource ModernTabItem}" ToolTip="انتخاب برنامه‌هایی که باید از تونل عبور کنند">
                 <TabItem.Header>
-                    <TextBlock Text="📱 برنامه‌ها"/>
+                    <StackPanel>
+                        <TextBlock Text="📱" FontSize="13" HorizontalAlignment="Center"/>
+                        <TextBlock Text="برنامه‌ها" FontSize="10" TextAlignment="Center"/>
+                    </StackPanel>
                 </TabItem.Header>
                 <views:AppsTabView/>
             </TabItem>
 
-            <TabItem Style="{StaticResource ModernTabItem}">
+            <TabItem Style="{StaticResource ModernTabItem}" ToolTip="تنظیمات عمومی تونل و DNS">
                 <TabItem.Header>
-                    <TextBlock Text="⚙ تنظیمات"/>
+                    <StackPanel>
+                        <TextBlock Text="⚙" FontSize="13" HorizontalAlignment="Center"/>
+                        <TextBlock Text="تنظیمات" FontSize="10" TextAlignment="Center"/>
+                    </StackPanel>
                 </TabItem.Header>
                 <views:SettingsTabView/>
             </TabItem>
 
             <!-- ███ TAB 3: ROUTING RULES ███ -->
-            <TabItem Style="{StaticResource ModernTabItem}">
+            <TabItem Style="{StaticResource ModernTabItem}" ToolTip="قوانین Include و Exclude مسیرها">
                 <TabItem.Header>
-                    <TextBlock Text="🧭 قوانین مسیر"/>
+                    <StackPanel>
+                        <TextBlock Text="🧭" FontSize="13" HorizontalAlignment="Center"/>
+                        <TextBlock Text="قوانین مسیر" FontSize="10" TextAlignment="Center"/>
+                    </StackPanel>
                 </TabItem.Header>
 
                 <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,12,0,0">
@@ -424,9 +436,12 @@
             </TabItem>
 
             <!-- ███ TAB 5: TRAFFIC MONITOR ███ -->
-            <TabItem Style="{StaticResource ModernTabItem}">
+            <TabItem Style="{StaticResource ModernTabItem}" ToolTip="نمایش ترافیک، تاریخچه و آمار اتصال">
                 <TabItem.Header>
-                    <TextBlock Text="📊 ترافیک"/>
+                    <StackPanel>
+                        <TextBlock Text="📊" FontSize="13" HorizontalAlignment="Center"/>
+                        <TextBlock Text="ترافیک/تاریخچه" FontSize="9.5" TextAlignment="Center"/>
+                    </StackPanel>
                 </TabItem.Header>
 
                 <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,12,0,0">
