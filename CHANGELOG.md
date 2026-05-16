@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 1.2.25 - 2026-05-16
+
+- Merge pull request #13 from BlacKSnowDot0/pr-clean
+- Merge pull request #16 from mohammad-parvizi-dev/main
+- Improve tab headers, theme styling, and tray notifications
+- Add startup and auto-connect app settings
+- feat(proxy): SOCKS5/HTTP via V2Ray/sing-box, add MixedProxyServer, remove standalone proxy types and local auth
+
 ## 1.2.24 - 2026-05-12
 
 - Added README screenshots in English and Persian.
@@ -28,4 +36,5 @@
 - Added in-app GitHub and donation links.
 - Added project metadata for MaxFan and GPL-3.0-or-later licensing.
 - Improved leak logging and traffic accounting in recent internal builds.
+
 
