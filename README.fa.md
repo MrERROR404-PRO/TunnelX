@@ -17,9 +17,16 @@
 - <span dir="ltr">Split tunneling</span> بر اساس برنامه‌های انتخاب‌شده در ویندوز
 - حالت <span dir="ltr">Full-route</span> برای تونل کردن کل سیستم
 - پشتیبانی از جریان‌های <span dir="ltr">V2Ray</span> بر پایه <span dir="ltr">Xray-core</span> و <span dir="ltr">sing-box</span>
+- پشتیبانی از <span dir="ltr">OpenVPN Community</span> با فایل‌های <span dir="ltr">`.ovpn`</span> برای <span dir="ltr">Split tunneling</span> برنامه‌های انتخاب‌شده
 - پروکسی <span dir="ltr">SOCKS5</span> محلی روی <span dir="ltr">`127.0.0.1`</span> برای ابزارهایی که تنظیم پروکسی داخلی دارند
 - تغییر مسیر <span dir="ltr">DNS</span>، مسدودسازی <span dir="ltr">IPv6</span>، محافظ نشت، عیب‌یابی <span dir="ltr">route</span> و تاریخچه مصرف تونل
 - رابط کاربری فارسی‌محور برای ویندوز
+
+## پشتیبانی از <span dir="ltr">OpenVPN</span>
+
+<span dir="ltr">TunnelX</span> می‌تواند نسخه نصب‌شده <span dir="ltr">OpenVPN Community</span> و فایل انتخابی <span dir="ltr">`.ovpn`</span> کاربر را اجرا کند و سپس سیاست <span dir="ltr">Split tunneling</span> خودش را اعمال کند؛ یعنی فقط برنامه‌ها و مقصدهای انتخاب‌شده از تونل <span dir="ltr">OpenVPN</span> عبور می‌کنند.
+
+<span dir="ltr">OpenVPN</span> همراه <span dir="ltr">TunnelX</span> توزیع نمی‌شود. برای این حالت باید <span dir="ltr">OpenVPN Community</span> را جداگانه نصب کنید، فایل <span dir="ltr">`.ovpn`</span> را در <span dir="ltr">TunnelX</span> انتخاب کنید و در صورت نیاز نام کاربری و رمز عبور <span dir="ltr">OpenVPN</span> را داخل برنامه وارد کنید. نصب بودن <span dir="ltr">OpenVPN Connect</span> به‌تنهایی برای این حالت کافی نیست، چون آن برنامه مسیرها و <span dir="ltr">DNS</span> را با کلاینت خودش مدیریت می‌کند.
 
 ## تصاویر برنامه
 

@@ -157,7 +157,7 @@
                             <StackPanel>
                                 <TextBlock Text="۱. پروفایل" FontSize="12" FontWeight="SemiBold"
                                            Foreground="{StaticResource TextPrimaryBrush}"/>
-                                <TextBlock Text="نوع اتصال را انتخاب کنید و کانفیگ L2TP یا V2Ray/Xray را وارد کنید."
+                                <TextBlock Text="نوع اتصال را انتخاب کنید: L2TP، V2Ray/Xray یا اوپن‌وی‌پی‌ان. برای اسپلیت اوپن‌وی‌پی‌ان، نسخه Community لازم است؛ فایل .ovpn را انتخاب کنید و نام کاربری/رمز را در TunnelX وارد کنید."
                                            FontSize="10" TextWrapping="Wrap"
                                            Foreground="{StaticResource TextSecondaryBrush}" Margin="0,5,0,0"/>
                             </StackPanel>
@@ -193,6 +193,45 @@
                             </StackPanel>
                         </Border>
                     </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Connection Types -->
+            <Border Style="{StaticResource CardPanel}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionHeader}" Text="راهنمای نوع اتصال"/>
+                    <TextBlock Text="L2TP/IPsec"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                    <TextBlock Text="آدرس سرور، نام کاربری، رمز عبور و Pre-Shared Key را وارد کنید؛ TunnelX اتصال ویندوز را ایجاد و مسیرها را مدیریت می‌کند."
+                               FontSize="11"
+                               LineHeight="18"
+                               TextWrapping="Wrap"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               Margin="0,4,0,10"/>
+
+                    <TextBlock Text="V2Ray / Xray"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                    <TextBlock Text="لینک یا کانفیگ V2Ray/Xray را در فیلد کانفیگ وارد کنید. TunnelX با sing-box/Xray تونل را بالا می‌آورد و برنامه‌های انتخابی را از آن عبور می‌دهد."
+                               FontSize="11"
+                               LineHeight="18"
+                               TextWrapping="Wrap"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               Margin="0,4,0,10"/>
+
+                    <TextBlock Text="OpenVPN"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                    <TextBlock Text="TunnelX فایل اوپن‌وی‌پی‌ان را همراه خود توزیع نمی‌کند. برای اسپلیت‌تانلینگ باید نسخه Community نصب باشد، چون TunnelX باید فایل openvpn.exe را با کانفیگ سازگار با اسپلیت اجرا کند. نسخه Connect معمولاً مسیر و DNS را خودش تغییر می‌دهد و برای جدا کردن ترافیک برنامه‌ها مناسب نیست. در تب اتصال فایل .ovpn را انتخاب کنید و اگر سرور نیاز دارد، نام کاربری و رمز را در TunnelX وارد کنید."
+                               FontSize="11"
+                               LineHeight="18"
+                               TextWrapping="Wrap"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               Margin="0,4,0,0"/>
                 </StackPanel>
             </Border>
 

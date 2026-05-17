@@ -16,6 +16,8 @@ public class ConnectionStatus
     public DateTime? ConnectedSince { get; set; }
     public string VpnLocalIp { get; set; } = string.Empty;
     public string VpnServerIp { get; set; } = string.Empty;
+    public int VpnServerPort { get; set; }
+    public string VpnGatewayIp { get; set; } = string.Empty;
     public int VpnInterfaceIndex { get; set; } = -1;
 
     /// <summary>

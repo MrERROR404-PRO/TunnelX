@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## 1.2.26 - 2026-05-17
+
+- Added OpenVPN Community support as an external tunnel provider for split tunneling.
+- Added `.ovpn` file selection, OpenVPN username/password fields, install detection, and clearer Persian guidance in the connection and help screens.
+- Added split-compatible OpenVPN config preparation with route/DNS push filtering, credential file handling without UTF-8 BOM, remote candidate filtering, and faster retry behavior.
+- Fixed OpenVPN split routing by capturing the real connected remote, assigned tunnel IP, and route gateway before starting packet routing.
+- Added OpenVPN stale-process cleanup for TunnelX-started OpenVPN processes and prevented stale TAP adapters from being treated as a fresh connection.
+- Improved server testing and post-connect ping behavior for OpenVPN profiles.
+
 ## 1.2.25 - 2026-05-16
 
 - Merge pull request #13 from BlacKSnowDot0/pr-clean
@@ -36,5 +45,4 @@
 - Added in-app GitHub and donation links.
 - Added project metadata for MaxFan and GPL-3.0-or-later licensing.
 - Improved leak logging and traffic accounting in recent internal builds.
-
 

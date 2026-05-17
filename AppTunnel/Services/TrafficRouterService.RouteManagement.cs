@@ -355,9 +355,10 @@ public partial class TrafficRouterService
     /// </summary>
     private bool TryAddRouteViaCommandLine(IPAddress dstIp)
     {
-        var ok = TryRunRouteCommand($"add {dstIp} mask 255.255.255.255 0.0.0.0 IF {_vpnInterfaceIndex} METRIC 1", out var stderr);
+        var gateway = string.IsNullOrWhiteSpace(_vpnGatewayIp) ? "0.0.0.0" : _vpnGatewayIp;
+        var ok = TryRunRouteCommand($"add {dstIp} mask 255.255.255.255 {gateway} IF {_vpnInterfaceIndex} METRIC 1", out var stderr);
         if (!ok && Interlocked.Read(ref _statRoutesFailed) <= 10)
-            Logger.Warning($"[ROUTE!] route.exe add {dstIp} stderr='{stderr.Trim()}'");
+            Logger.Warning($"[ROUTE!] route.exe add {dstIp} via {gateway} stderr='{stderr.Trim()}'");
         return ok;
     }
 

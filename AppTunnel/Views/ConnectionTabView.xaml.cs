@@ -19,22 +19,29 @@ public partial class ConnectionTabView : System.Windows.Controls.UserControl
         // Wire up PasswordBox (can't bind directly in WPF)
         PasswordField.PasswordChanged += OnPasswordFieldChanged;
         PskField.PasswordChanged += OnPskFieldChanged;
+        OpenVpnPasswordField.PasswordChanged += OnOpenVpnPasswordFieldChanged;
 
         // When profile changes, update PasswordBox fields
         vm.PasswordChanged += OnViewModelPasswordChanged;
+        vm.OpenVpnPasswordChanged += OnViewModelOpenVpnPasswordChanged;
 
         // Load initial values
         PasswordField.Password = vm.Password;
         PskField.Password = vm.PreSharedKey;
+        OpenVpnPasswordField.Password = vm.OpenVpnPassword;
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
         PasswordField.PasswordChanged -= OnPasswordFieldChanged;
         PskField.PasswordChanged -= OnPskFieldChanged;
+        OpenVpnPasswordField.PasswordChanged -= OnOpenVpnPasswordFieldChanged;
 
         if (DataContext is MainViewModel vm)
+        {
             vm.PasswordChanged -= OnViewModelPasswordChanged;
+            vm.OpenVpnPasswordChanged -= OnViewModelOpenVpnPasswordChanged;
+        }
     }
 
     private void OnPasswordFieldChanged(object sender, RoutedEventArgs e)
@@ -55,6 +62,12 @@ public partial class ConnectionTabView : System.Windows.Controls.UserControl
         }
     }
 
+    private void OnOpenVpnPasswordFieldChanged(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm && vm.OpenVpnPassword != OpenVpnPasswordField.Password)
+            vm.OpenVpnPassword = OpenVpnPasswordField.Password;
+    }
+
     private void OnViewModelPasswordChanged(string password, string psk)
     {
         Dispatcher.Invoke(() =>
@@ -62,6 +75,11 @@ public partial class ConnectionTabView : System.Windows.Controls.UserControl
             PasswordField.Password = password;
             PskField.Password = psk;
         });
+    }
+
+    private void OnViewModelOpenVpnPasswordChanged(string password)
+    {
+        Dispatcher.Invoke(() => OpenVpnPasswordField.Password = password);
     }
 
     private void OnProfileNameChanged(object sender, RoutedEventArgs e)
