@@ -81,7 +81,7 @@ jobs:
             }
           }
 
-          if ($nextVersion -le $currentVersion) {
+          if ($nextVersion -lt $currentVersion -or (-not $requestedVersion -and $nextVersion -le $currentVersion)) {
             throw "Release version ($nextVersion) must be greater than current project version ($currentVersion)."
           }
 
@@ -120,28 +120,34 @@ jobs:
             throw "CHANGELOG.md must contain a '## Unreleased' section."
           }
 
-          $unreleasedMatch = [regex]::Match($changelog, '(?ms)^## Unreleased\s*(?<notes>.*?)(?=^##\s|\z)')
-          $notes = $unreleasedMatch.Groups["notes"].Value.Trim()
-
-          if (-not $notes) {
-            $previousTag = git describe --tags --abbrev=0 2>$null
-            if ($LASTEXITCODE -eq 0 -and $previousTag) {
-              $subjects = git log "$previousTag..HEAD" --pretty=format:"- %s"
-            }
-            else {
-              $subjects = git log --pretty=format:"- %s"
-            }
-
-            $notes = ($subjects | Where-Object { $_ -and ($_ -notmatch '^- Prepare release v') }) -join "`n"
-            if (-not $notes) {
-              $notes = "- Maintenance release."
-            }
+          $existingReleaseMatch = [regex]::Match($changelog, "(?ms)^## $([regex]::Escape($version))\s+-\s+.*?\r?\n(?<notes>.*?)(?=^##\s|\z)")
+          if ($existingReleaseMatch.Success) {
+            $notes = $existingReleaseMatch.Groups["notes"].Value.Trim()
           }
+          else {
+            $unreleasedMatch = [regex]::Match($changelog, '(?ms)^## Unreleased\s*(?<notes>.*?)(?=^##\s|\z)')
+            $notes = $unreleasedMatch.Groups["notes"].Value.Trim()
 
-          $releaseHeading = "## $version - $date"
-          $replacement = "## Unreleased`n`n$releaseHeading`n`n$notes`n`n"
-          $changelog = [regex]::Replace($changelog, '(?ms)^## Unreleased\s*(?<notes>.*?)(?=^##\s|\z)', $replacement, 1)
-          Set-Content -Encoding UTF8 -LiteralPath $changelogPath -Value $changelog
+            if (-not $notes) {
+              $previousTag = git describe --tags --abbrev=0 2>$null
+              if ($LASTEXITCODE -eq 0 -and $previousTag) {
+                $subjects = git log "$previousTag..HEAD" --pretty=format:"- %s"
+              }
+              else {
+                $subjects = git log --pretty=format:"- %s"
+              }
+
+              $notes = ($subjects | Where-Object { $_ -and ($_ -notmatch '^- Prepare release v') }) -join "`n"
+              if (-not $notes) {
+                $notes = "- Maintenance release."
+              }
+            }
+
+            $releaseHeading = "## $version - $date"
+            $replacement = "## Unreleased`n`n$releaseHeading`n`n$notes`n`n"
+            $changelog = [regex]::Replace($changelog, '(?ms)^## Unreleased\s*(?<notes>.*?)(?=^##\s|\z)', $replacement, 1)
+            Set-Content -Encoding UTF8 -LiteralPath $changelogPath -Value $changelog
+          }
 
           $notesFile = Join-Path $env:RUNNER_TEMP "release-notes.md"
           $notes | Set-Content -Encoding UTF8 -LiteralPath $notesFile
@@ -155,7 +161,12 @@ jobs:
           $tag = "${{ steps.meta.outputs.tag }}"
 
           git add AppTunnel/AppTunnel.csproj CHANGELOG.md
-          git commit -m "Prepare release $tag"
+          if (git diff --cached --quiet) {
+            Write-Host "No release metadata changes to commit."
+          }
+          else {
+            git commit -m "Prepare release $tag"
+          }
           $releaseSha = git rev-parse HEAD
           git tag $tag
           git push origin HEAD:${{ github.ref_name }}
