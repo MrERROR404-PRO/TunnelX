@@ -118,14 +118,21 @@ public class ProfileService
                 PreSharedKey = DecryptString(s.EncryptedPsk),
                 TunnelType = s.TunnelType,
                 V2RayConfig = s.V2RayConfig,
+                OpenVpnConfig = s.OpenVpnConfig,
+                OpenVpnConfigPath = !string.IsNullOrWhiteSpace(s.OpenVpnConfigPath)
+                    ? s.OpenVpnConfigPath
+                    : (s.OpenVpnExePath.EndsWith(".ovpn", StringComparison.OrdinalIgnoreCase) ? s.OpenVpnExePath : ""),
+                OpenVpnUsername = s.OpenVpnUsername,
+                OpenVpnPassword = DecryptString(s.EncryptedOpenVpnPassword),
                 MixedProxyPort = s.Socks5Port > 0 ? s.Socks5Port : 1080,
                 AutoTuneMtu = s.AutoTuneMtu,
                 EnableDnsOptimization = s.EnableDnsOptimization,
                 EnableGameMode = s.EnableGameMode
             }).ToList();
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.Warning($"[PROFILE] Failed to load profiles: {ex.Message}");
             return new List<ConnectionProfile>();
         }
     }
@@ -149,6 +156,10 @@ public class ProfileService
             EncryptedPsk = EncryptString(p.PreSharedKey),
             TunnelType = p.TunnelType,
             V2RayConfig = p.V2RayConfig,
+            OpenVpnConfig = p.OpenVpnConfig,
+            OpenVpnConfigPath = p.OpenVpnConfigPath,
+            OpenVpnUsername = p.OpenVpnUsername,
+            EncryptedOpenVpnPassword = EncryptString(p.OpenVpnPassword),
             Socks5Port = p.MixedProxyPort,
             AutoTuneMtu = p.AutoTuneMtu,
             EnableDnsOptimization = p.EnableDnsOptimization,
@@ -206,6 +217,12 @@ public class ProfileService
         public string EncryptedPsk { get; set; } = "";
         public TunnelType TunnelType { get; set; } = TunnelType.L2tpIpsec;
         public string V2RayConfig { get; set; } = "";
+        public string OpenVpnConfig { get; set; } = "";
+        public string OpenVpnConfigPath { get; set; } = "";
+        // Legacy field: early OpenVPN test builds accidentally stored .ovpn path here.
+        public string OpenVpnExePath { get; set; } = "";
+        public string OpenVpnUsername { get; set; } = "";
+        public string EncryptedOpenVpnPassword { get; set; } = "";
         [JsonPropertyName("socks5Port")]
         public int Socks5Port { get; set; } = 1080;
         public bool AutoTuneMtu { get; set; } = true;

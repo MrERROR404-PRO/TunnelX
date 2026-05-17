@@ -17,6 +17,7 @@ public partial class MainViewModel
         set
         {
             if (_selectedProfile == value) return;
+            _saveDebounceTimer.Stop();
             SaveCurrentProfileState();
             _selectedProfile = value;
             OnPropertyChanged();
@@ -33,6 +34,7 @@ public partial class MainViewModel
     /// Event to notify code-behind to update PasswordBox controls.
     /// </summary>
     public event Action<string, string>? PasswordChanged;
+    public event Action<string>? OpenVpnPasswordChanged;
 
     private void LoadProfiles()
     {
@@ -111,6 +113,10 @@ public partial class MainViewModel
         _selectedProfile.PreSharedKey = PreSharedKey;
         _selectedProfile.TunnelType = _currentTunnelType;
         _selectedProfile.V2RayConfig = SelectedV2RayConfig;
+        _selectedProfile.OpenVpnConfig = SelectedOpenVpnConfig;
+        _selectedProfile.OpenVpnConfigPath = SelectedOpenVpnConfigPath;
+        _selectedProfile.OpenVpnUsername = OpenVpnUsername;
+        _selectedProfile.OpenVpnPassword = OpenVpnPassword;
         _selectedProfile.MixedProxyPort = MixedProxyPort;
         _selectedProfile.AutoTuneMtu = AutoTuneMtu;
         _selectedProfile.EnableDnsOptimization = IsDnsOptimizationEnabled;
@@ -123,6 +129,7 @@ public partial class MainViewModel
     /// </summary>
     public void SaveCurrentState()
     {
+        if (_isLoadingProfile) return;
         SaveStatusText = "در حال ذخیره...";
         _saveDebounceTimer.Stop();
         _saveDebounceTimer.Start(); // Restart timer - will save after 1 second of no changes
@@ -141,34 +148,50 @@ public partial class MainViewModel
 
     private void LoadProfileIntoUi(ConnectionProfile profile)
     {
-        ServerAddress = profile.ServerAddress;
-        Username = profile.Username;
-        Password = profile.Password;
-        PreSharedKey = profile.PreSharedKey;
-        _mixedProxyPort = profile.MixedProxyPort > 0 ? profile.MixedProxyPort : 1080;
-        _trafficRouter.Socks5Port = _mixedProxyPort;
-        OnPropertyChanged(nameof(MixedProxyPort));
-        OnPropertyChanged(nameof(MixedProxyPortText));
-        OnPropertyChanged(nameof(MixedProxyInfo));
-        UpdateMixedProxyPortStatus();
-        _autoTuneMtu = profile.AutoTuneMtu;
-        _isDnsOptimizationEnabled = profile.EnableDnsOptimization;
-        _isGameModeEnabled = profile.EnableGameMode;
-        _trafficRouter.EnableDnsOptimization = _isDnsOptimizationEnabled;
-        _trafficRouter.EnableGameMode = _isGameModeEnabled;
-        OnPropertyChanged(nameof(AutoTuneMtu));
-        OnPropertyChanged(nameof(IsDnsOptimizationEnabled));
-        OnPropertyChanged(nameof(IsGameModeEnabled));
-        OnPropertyChanged(nameof(GameModeStatusText));
-        // Use the field directly to avoid writing back to the old profile
-        // while the new profile is being loaded.
-        _currentTunnelType = profile.TunnelType;
-        _selectedV2RayConfig = profile.V2RayConfig;
-        OnPropertyChanged(nameof(CurrentTunnelType));
-        OnPropertyChanged(nameof(SelectedV2RayConfig));
-        UpdateConfigDiagnostics();
+        _isLoadingProfile = true;
+        try
+        {
+            ServerAddress = profile.ServerAddress;
+            Username = profile.Username;
+            Password = profile.Password;
+            PreSharedKey = profile.PreSharedKey;
+            _mixedProxyPort = profile.MixedProxyPort > 0 ? profile.MixedProxyPort : 1080;
+            _trafficRouter.Socks5Port = _mixedProxyPort;
+            OnPropertyChanged(nameof(MixedProxyPort));
+            OnPropertyChanged(nameof(MixedProxyPortText));
+            OnPropertyChanged(nameof(MixedProxyInfo));
+            UpdateMixedProxyPortStatus();
+            _autoTuneMtu = profile.AutoTuneMtu;
+            _isDnsOptimizationEnabled = profile.EnableDnsOptimization;
+            _isGameModeEnabled = profile.EnableGameMode;
+            _trafficRouter.EnableDnsOptimization = _isDnsOptimizationEnabled;
+            _trafficRouter.EnableGameMode = _isGameModeEnabled;
+            OnPropertyChanged(nameof(AutoTuneMtu));
+            OnPropertyChanged(nameof(IsDnsOptimizationEnabled));
+            OnPropertyChanged(nameof(IsGameModeEnabled));
+            OnPropertyChanged(nameof(GameModeStatusText));
+            // Use the field directly to avoid writing back to the old profile
+            // while the new profile is being loaded.
+            _currentTunnelType = profile.TunnelType;
+            _selectedV2RayConfig = profile.V2RayConfig;
+            _selectedOpenVpnConfig = profile.OpenVpnConfig;
+            _selectedOpenVpnConfigPath = profile.OpenVpnConfigPath;
+            _openVpnUsername = profile.OpenVpnUsername;
+            _openVpnPassword = profile.OpenVpnPassword;
+            OnPropertyChanged(nameof(CurrentTunnelType));
+            OnPropertyChanged(nameof(SelectedV2RayConfig));
+            OnPropertyChanged(nameof(SelectedOpenVpnConfig));
+            OnPropertyChanged(nameof(SelectedOpenVpnConfigPath));
+            OnPropertyChanged(nameof(OpenVpnUsername));
+            UpdateConfigDiagnostics();
 
-        PasswordChanged?.Invoke(profile.Password, profile.PreSharedKey);
+            PasswordChanged?.Invoke(profile.Password, profile.PreSharedKey);
+            OpenVpnPasswordChanged?.Invoke(profile.OpenVpnPassword);
+        }
+        finally
+        {
+            _isLoadingProfile = false;
+        }
     }
 
     private void CreateNewProfile()
@@ -196,6 +219,10 @@ public partial class MainViewModel
             PreSharedKey = _selectedProfile.PreSharedKey,
             TunnelType = _selectedProfile.TunnelType,
             V2RayConfig = _selectedProfile.V2RayConfig,
+            OpenVpnConfig = _selectedProfile.OpenVpnConfig,
+            OpenVpnConfigPath = _selectedProfile.OpenVpnConfigPath,
+            OpenVpnUsername = _selectedProfile.OpenVpnUsername,
+            OpenVpnPassword = _selectedProfile.OpenVpnPassword,
             MixedProxyPort = _selectedProfile.MixedProxyPort,
             AutoTuneMtu = _selectedProfile.AutoTuneMtu,
             EnableDnsOptimization = _selectedProfile.EnableDnsOptimization,

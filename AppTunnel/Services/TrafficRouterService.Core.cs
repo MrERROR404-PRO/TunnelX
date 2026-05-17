@@ -49,6 +49,7 @@ public partial class TrafficRouterService : IDisposable
     private string _vpnLocalIp = "";
     private string _vpnServerIp = "";    // resolved IPv4 — used in WinDivert filter strings
     private string _vpnServerHost = "";   // original hostname/IP from config — used for TCP health checks
+    private string _vpnGatewayIp = "";    // optional next hop for TAP/OpenVPN host routes
     private byte[]? _vpnLocalIpBytes;
     private volatile bool _isRunning;
     private bool _fullRouteEnabled;
@@ -295,12 +296,13 @@ public partial class TrafficRouterService : IDisposable
     public long ActiveRouteCount => _addedRoutes.Count;
     public long RouteFailureCount => Interlocked.Read(ref _statRoutesFailed);
 
-    public void Start(int vpnInterfaceIndex, string vpnLocalIp, string vpnServerIp)
+    public void Start(int vpnInterfaceIndex, string vpnLocalIp, string vpnServerIp, string vpnGatewayIp = "")
     {
         if (_isRunning) return;
 
         _vpnInterfaceIndex = vpnInterfaceIndex;
         _vpnLocalIp = vpnLocalIp;
+        _vpnGatewayIp = vpnGatewayIp;
         _vpnLocalIpBytes = IPAddress.TryParse(vpnLocalIp, out var vpnAddr)
             ? vpnAddr.GetAddressBytes()
             : null;
@@ -404,7 +406,7 @@ public partial class TrafficRouterService : IDisposable
         _flowLogCount = 0;
         _flowMatchLogCount = 0;
 
-        Logger.Info($"TrafficRouter starting: VPN Interface={vpnInterfaceIndex}, LocalIP={vpnLocalIp}, ServerIP={vpnServerIp}");
+        Logger.Info($"TrafficRouter starting: VPN Interface={vpnInterfaceIndex}, LocalIP={vpnLocalIp}, Gateway={_vpnGatewayIp}, ServerIP={vpnServerIp}");
         Logger.Info($"Target apps: {string.Join(", ", _targetExecutables.Keys)}");
         if (PassthroughMode)
             Logger.Warning("DIAGNOSTIC PASSTHROUGH MODE ENABLED — packets will NOT be redirected. For testing only.");

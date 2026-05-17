@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Net.NetworkInformation;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Nodes;
@@ -25,6 +26,7 @@ public partial class MainViewModel : INotifyPropertyChanged
     private CancellationTokenSource? _connectionCts;
     private DateTime _connectionStartTime;
     private ProfileService.AppSettings _appSettings = new();
+    private bool _isLoadingProfile;
 
     public MainViewModel()
     {
@@ -37,7 +39,7 @@ public partial class MainViewModel : INotifyPropertyChanged
                     Application.Current?.Dispatcher.Invoke(() =>
                         StatusText = $"خطا: {t.Exception?.InnerException?.Message}");
             }, TaskScheduler.Default);
-        }, _ => !IsBusy);
+        }, _ => !IsBusy || ConnectionState == ConnectionState.Connecting);
         AddAppCommand = new RelayCommand(_ => AddCustomApp());
         RemoveAppCommand = new RelayCommand(RemoveApp);
         ToggleAppCommand = new RelayCommand(ToggleApp);
@@ -61,9 +63,12 @@ public partial class MainViewModel : INotifyPropertyChanged
 
         // Ping command
         TogglePingCommand = new RelayCommand(_ => TogglePing(), _ => IsConnected);
+        TestConnectedServerPingCommand = new RelayCommand(_ => _ = TestConnectedServerPingAsync(), _ => IsConnected && !IsTestingConnectedServerPing);
         TestServerPingCommand = new RelayCommand(_ => _ = TestServerPingAsync(), _ => !IsConnected && !IsTestingServerPing);
-        PasteConfigCommand = new RelayCommand(_ => PasteConfigFromClipboard(), _ => !IsConnected && CurrentTunnelType == TunnelType.V2Ray);
-        ClearConfigCommand = new RelayCommand(_ => SelectedV2RayConfig = "", _ => !IsConnected && CurrentTunnelType == TunnelType.V2Ray);
+        PasteConfigCommand = new RelayCommand(_ => PasteConfigFromClipboard(), _ => !IsConnected && (CurrentTunnelType == TunnelType.V2Ray || CurrentTunnelType == TunnelType.OpenVpn));
+        ClearConfigCommand = new RelayCommand(_ => ClearCurrentConfig(), _ => !IsConnected && (CurrentTunnelType == TunnelType.V2Ray || CurrentTunnelType == TunnelType.OpenVpn));
+        BrowseOpenVpnConfigCommand = new RelayCommand(_ => BrowseForOpenVpnConfig(), _ => !IsConnected && CurrentTunnelType == TunnelType.OpenVpn);
+        OpenOpenVpnCommunityDownloadCommand = new RelayCommand(_ => OpenExternalLink(OpenVpnCommunityDownloadUrl));
         OpenGitHubCommand = new RelayCommand(_ => OpenExternalLink(AppInfo.GitHubUrl));
         OpenDonateCommand = new RelayCommand(_ => OpenExternalLink(AppInfo.PayPalDonateUrl));
         CopyDonationInfoCommand = new RelayCommand(_ => CopyDonationInfoToClipboard());
@@ -93,6 +98,7 @@ public partial class MainViewModel : INotifyPropertyChanged
         LoadIncludes();
         LoadHistory();
         LoadAppSettings();
+        RefreshOpenVpnInstallStatus();
         _ = CheckForUpdatesAsync(true);
 
         // Auto-connect to last active profile if enabled
@@ -283,7 +289,13 @@ public partial class MainViewModel : INotifyPropertyChanged
     public bool IsBusy
     {
         get => _isBusy;
-        set { _isBusy = value; OnPropertyChanged(); OnPropertyChanged(nameof(ConnectButtonText)); }
+        set
+        {
+            _isBusy = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(ConnectButtonText));
+            CommandManager.InvalidateRequerySuggested();
+        }
     }
 
     private ConnectionState _connectionState = ConnectionState.Disconnected;
@@ -298,11 +310,49 @@ public partial class MainViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(ConnectButtonText));
             OnPropertyChanged(nameof(StatusColor));
             OnPropertyChanged(nameof(StatusText));
+            OnPropertyChanged(nameof(IsOpenVpnConnectionPending));
             RaiseHealthStatusChanged();
+            CommandManager.InvalidateRequerySuggested();
         }
     }
 
     public bool IsConnected => _connectionState == ConnectionState.Connected;
+    public bool IsOpenVpnConnectionPending =>
+        _connectionState == ConnectionState.Connecting && CurrentTunnelType == TunnelType.OpenVpn;
+    public const string OpenVpnCommunityDownloadUrl = "https://openvpn.net/community-downloads/";
+
+    private bool _isOpenVpnCommunityInstalled;
+    public bool IsOpenVpnCommunityInstalled
+    {
+        get => _isOpenVpnCommunityInstalled;
+        private set
+        {
+            if (_isOpenVpnCommunityInstalled == value) return;
+            _isOpenVpnCommunityInstalled = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(OpenVpnPrerequisiteText));
+            OnPropertyChanged(nameof(OpenVpnPrerequisiteColor));
+        }
+    }
+
+    private string _openVpnDetectedPath = "";
+    public string OpenVpnDetectedPath
+    {
+        get => _openVpnDetectedPath;
+        private set
+        {
+            if (_openVpnDetectedPath == value) return;
+            _openVpnDetectedPath = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(OpenVpnPrerequisiteText));
+        }
+    }
+
+    public string OpenVpnPrerequisiteText => IsOpenVpnCommunityInstalled
+        ? $"پیش‌نیاز آماده است: نسخه Community اوپن‌وی‌پی‌ان پیدا شد: {OpenVpnDetectedPath}"
+        : "اخطار: نسخه Community اوپن‌وی‌پی‌ان نصب نیست. برای استفاده از اسپلیت‌تانلینگ با این نوع اتصال، ابتدا آن را از لینک رسمی نصب کنید.";
+
+    public string OpenVpnPrerequisiteColor => IsOpenVpnCommunityInstalled ? "#6CCB5F" : "#E0A020";
 
     /// <summary>App version read from a single app-wide source.</summary>
     public string AppVersion => AppInfo.VersionText;
@@ -405,8 +455,12 @@ public partial class MainViewModel : INotifyPropertyChanged
             if (_currentTunnelType == value) return;
             _currentTunnelType = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(IsOpenVpnConnectionPending));
+            OnPropertyChanged(nameof(ConnectedServerPingButtonText));
             if (_selectedProfile != null)
                 _selectedProfile.TunnelType = value;
+            if (value == TunnelType.OpenVpn)
+                RefreshOpenVpnInstallStatus();
             UpdateConfigDiagnostics();
             RaiseHealthStatusChanged();
             SaveCurrentState();
@@ -430,6 +484,69 @@ public partial class MainViewModel : INotifyPropertyChanged
             RaiseHealthStatusChanged();
             SaveCurrentState();
             CommandManager.InvalidateRequerySuggested();
+        }
+    }
+
+    private string _selectedOpenVpnConfig = "";
+    public string SelectedOpenVpnConfig
+    {
+        get => _selectedOpenVpnConfig;
+        set
+        {
+            if (_selectedOpenVpnConfig == value) return;
+            _selectedOpenVpnConfig = value;
+            if (_selectedProfile != null)
+                _selectedProfile.OpenVpnConfig = value;
+            OnPropertyChanged();
+            UpdateConfigDiagnostics();
+            RaiseHealthStatusChanged();
+            SaveCurrentState();
+            CommandManager.InvalidateRequerySuggested();
+        }
+    }
+
+    private string _selectedOpenVpnConfigPath = "";
+    public string SelectedOpenVpnConfigPath
+    {
+        get => _selectedOpenVpnConfigPath;
+        set
+        {
+            if (_selectedOpenVpnConfigPath == value) return;
+            _selectedOpenVpnConfigPath = value;
+            if (_selectedProfile != null)
+                _selectedProfile.OpenVpnConfigPath = value;
+            OnPropertyChanged();
+            SaveCurrentState();
+        }
+    }
+
+    private string _openVpnUsername = "";
+    public string OpenVpnUsername
+    {
+        get => _openVpnUsername;
+        set
+        {
+            if (_openVpnUsername == value) return;
+            _openVpnUsername = value;
+            if (_selectedProfile != null)
+                _selectedProfile.OpenVpnUsername = value;
+            OnPropertyChanged();
+            SaveCurrentState();
+        }
+    }
+
+    private string _openVpnPassword = "";
+    public string OpenVpnPassword
+    {
+        get => _openVpnPassword;
+        set
+        {
+            if (_openVpnPassword == value) return;
+            _openVpnPassword = value;
+            if (_selectedProfile != null)
+                _selectedProfile.OpenVpnPassword = value;
+            OnPropertyChanged();
+            SaveCurrentState();
         }
     }
 
@@ -549,6 +666,7 @@ public partial class MainViewModel : INotifyPropertyChanged
         TunnelType.L2tpIpsec => "L2TP",
         TunnelType.V2Ray when TunnelProviderFactory.RequiresXray(SelectedV2RayConfig) => "Xray",
         TunnelType.V2Ray => "sing-box",
+        TunnelType.OpenVpn => "OpenVPN",
         _ => "-"
     };
 
@@ -595,6 +713,21 @@ public partial class MainViewModel : INotifyPropertyChanged
     }
 
     public string PingButtonText => _isPinging ? "⏹ توقف" : "▶ شروع";
+
+    private bool _isTestingConnectedServerPing;
+    public bool IsTestingConnectedServerPing
+    {
+        get => _isTestingConnectedServerPing;
+        set
+        {
+            _isTestingConnectedServerPing = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(ConnectedServerPingButtonText));
+            CommandManager.InvalidateRequerySuggested();
+        }
+    }
+
+    public string ConnectedServerPingButtonText => IsTestingConnectedServerPing ? "در حال پینگ..." : "پینگ سرور";
 
     private string _pingResult = "";
     public string PingResult
@@ -728,9 +861,12 @@ public partial class MainViewModel : INotifyPropertyChanged
     public ICommand AddIncludeCommand { get; }
     public ICommand RemoveIncludeCommand { get; }
     public ICommand TogglePingCommand { get; }
+    public ICommand TestConnectedServerPingCommand { get; }
     public ICommand TestServerPingCommand { get; }
     public ICommand PasteConfigCommand { get; }
     public ICommand ClearConfigCommand { get; }
+    public ICommand BrowseOpenVpnConfigCommand { get; }
+    public ICommand OpenOpenVpnCommunityDownloadCommand { get; }
     public ICommand OpenGitHubCommand { get; }
     public ICommand OpenDonateCommand { get; }
     public ICommand CopyDonationInfoCommand { get; }
@@ -835,12 +971,60 @@ public partial class MainViewModel : INotifyPropertyChanged
         try
         {
             if (System.Windows.Clipboard.ContainsText())
-                SelectedV2RayConfig = System.Windows.Clipboard.GetText().Trim();
+            {
+                var text = System.Windows.Clipboard.GetText().Trim();
+                if (CurrentTunnelType == TunnelType.OpenVpn)
+                    SelectedOpenVpnConfig = text;
+                else
+                    SelectedV2RayConfig = text;
+            }
         }
         catch (Exception ex)
         {
             ConfigValidationText = $"خواندن کلیپ‌بورد ناموفق بود: {ex.Message}";
         }
+    }
+
+    private void ClearCurrentConfig()
+    {
+        if (CurrentTunnelType == TunnelType.OpenVpn)
+        {
+            SelectedOpenVpnConfig = "";
+            SelectedOpenVpnConfigPath = "";
+        }
+        else
+            SelectedV2RayConfig = "";
+    }
+
+    private void BrowseForOpenVpnConfig()
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "انتخاب فایل OpenVPN",
+            Filter = "OpenVPN config (*.ovpn)|*.ovpn|All files (*.*)|*.*",
+            CheckFileExists = true,
+            Multiselect = false
+        };
+
+        if (dialog.ShowDialog() != true) return;
+
+        try
+        {
+            SelectedOpenVpnConfigPath = dialog.FileName;
+            SelectedOpenVpnConfig = File.ReadAllText(dialog.FileName);
+        }
+        catch (Exception ex)
+        {
+            ConfigValidationText = $"خواندن فایل OpenVPN ناموفق بود: {ex.Message}";
+        }
+    }
+
+    private void RefreshOpenVpnInstallStatus()
+    {
+        var path = OpenVpnTunnelProvider.FindOpenVpnExecutable();
+        IsOpenVpnCommunityInstalled = !string.IsNullOrWhiteSpace(path);
+        OpenVpnDetectedPath = path ?? "";
+        UpdateConfigDiagnostics();
     }
 
     private void UpdateConfigDiagnostics()
@@ -851,6 +1035,19 @@ public partial class MainViewModel : INotifyPropertyChanged
             ConfigValidationText = string.IsNullOrWhiteSpace(ServerAddress)
                 ? "آدرس سرور L2TP را وارد کنید"
                 : "آماده تست و اتصال";
+            return;
+        }
+
+        if (CurrentTunnelType == TunnelType.OpenVpn)
+        {
+            ConfigCoreHint = "OpenVPN";
+            ConfigValidationText = !IsOpenVpnCommunityInstalled
+                ? "OpenVPN Community نصب نیست؛ ابتدا آن را از لینک رسمی نصب کنید"
+                : string.IsNullOrWhiteSpace(SelectedOpenVpnConfig)
+                ? "فایل .ovpn را انتخاب کنید؛ TunnelX آن را در حالت split-compatible اجرا می‌کند"
+                : string.IsNullOrWhiteSpace(OpenVpnUsername)
+                    ? "کانفیگ انتخاب شد؛ اگر سرور احراز هویت دارد نام کاربری را وارد کنید"
+                    : "کانفیگ و نام کاربری OpenVPN آماده است";
             return;
         }
 

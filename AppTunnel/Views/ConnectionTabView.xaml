@@ -17,8 +17,65 @@
         <!-- ══ DISCONNECTED STATE: Show connection form ══ -->
         <StackPanel Visibility="{Binding IsConnected, Converter={StaticResource InverseBoolToVis}}">
 
+        <!-- OpenVPN connecting view -->
+        <Border Background="#33221812"
+                BorderBrush="{StaticResource WarningBrush}"
+                BorderThickness="1"
+                CornerRadius="12"
+                Padding="18,16"
+                Margin="0,0,0,10"
+                Visibility="{Binding IsOpenVpnConnectionPending, Converter={StaticResource BoolToVis}}">
+            <StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0"
+                            Width="42"
+                            Height="42"
+                            CornerRadius="21"
+                            Background="#22FFC107"
+                            VerticalAlignment="Top">
+                        <TextBlock Text="⏳"
+                                   FontSize="20"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="در حال اتصال OpenVPN"
+                                   FontSize="15"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource WarningBrush}"/>
+                        <TextBlock Text="{Binding StatusText}"
+                                   TextWrapping="Wrap"
+                                   FontSize="11"
+                                   LineHeight="18"
+                                   Margin="0,5,0,0"
+                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                        <TextBlock Text="تا قبل از بالا آمدن آداپتر، مسیرهای سیستم تغییر داده نمی‌شود. اگر اتصال طولانی شد، فایل .ovpn، نام کاربری/رمز یا نصب OpenVPN Community را بررسی کنید."
+                                   TextWrapping="Wrap"
+                                   FontSize="10"
+                                   LineHeight="17"
+                                   Margin="0,6,0,0"
+                                   Foreground="{StaticResource TextSecondaryBrush}"/>
+                    </StackPanel>
+                    <Button Grid.Column="4"
+                            Style="{StaticResource DangerButton}"
+                            Content="لغو اتصال"
+                            Command="{Binding ConnectCommand}"
+                            VerticalAlignment="Top"
+                            Padding="14,7"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+
         <!-- ── Profile Card ── -->
-        <Border Style="{StaticResource CardPanel}">
+        <Border Style="{StaticResource CardPanel}"
+                Visibility="{Binding IsOpenVpnConnectionPending, Converter={StaticResource InverseBoolToVis}}">
             <StackPanel>
                 <!-- Header -->
                 <Grid Margin="0,0,0,6">
@@ -80,7 +137,8 @@
         </Border>
 
         <!-- ── Server Settings Card ── -->
-        <Border Style="{StaticResource CardPanel}">
+        <Border Style="{StaticResource CardPanel}"
+                Visibility="{Binding IsOpenVpnConnectionPending, Converter={StaticResource InverseBoolToVis}}">
             <StackPanel>
                 <TextBlock Style="{StaticResource SectionHeader}" Text="🌐 تنظیمات سرور"
                            Margin="0,0,0,4"/>
@@ -95,6 +153,8 @@
                                   Tag="{x:Static models:TunnelType.L2tpIpsec}"/>
                     <ComboBoxItem Content="V2Ray / Xray"
                                   Tag="{x:Static models:TunnelType.V2Ray}"/>
+                    <ComboBoxItem Content="OpenVPN"
+                                  Tag="{x:Static models:TunnelType.OpenVpn}"/>
                 </ComboBox>
 
                 <!-- L2TP fields (shown only when TunnelType = L2tpIpsec) -->
@@ -202,7 +262,103 @@
                 </StackPanel>
                 <!-- End V2Ray fields -->
 
-<Border Background="#11FFFFFF" CornerRadius="8" Padding="10,8" Margin="0,8,0,0">
+                <!-- OpenVPN fields (shown only when TunnelType = OpenVpn) -->
+                <StackPanel Visibility="{Binding CurrentTunnelType,
+                            Converter={StaticResource EnumToVis},
+                            ConverterParameter=OpenVpn}">
+                    <Border Background="#11FFFFFF" CornerRadius="8" Padding="10,8" Margin="0,0,0,8">
+                        <StackPanel>
+                            <TextBlock Text="TunnelX فایل .ovpn را با OpenVPN Community اجرا می‌کند و مسیر/DNS پیش‌فرض OpenVPN را کنترل می‌کند تا فقط برنامه‌های انتخابی از تونل عبور کنند."
+                                       TextWrapping="Wrap"
+                                       FontSize="11"
+                                       Foreground="{StaticResource TextSecondaryBrush}"/>
+                            <TextBlock Text="OpenVPN Connect به‌تنهایی کافی نیست؛ اگر Community نصب نباشد، از دکمه دانلود پایین استفاده کنید."
+                                       TextWrapping="Wrap"
+                                       FontSize="10"
+                                       Margin="0,5,0,0"
+                                       Foreground="{StaticResource WarningBrush}"/>
+                        </StackPanel>
+                    </Border>
+                    <TextBlock Style="{StaticResource FieldLabel}" Text="فایل OpenVPN (.ovpn)"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="6"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0"
+                                 Style="{StaticResource ModernTextBox}"
+                                 Text="{Binding SelectedOpenVpnConfigPath}"
+                                 IsReadOnly="True"
+                                 FlowDirection="LeftToRight"/>
+                        <Button Grid.Column="2"
+                                Style="{StaticResource SecondaryButton}"
+                                Content="انتخاب فایل"
+                                Command="{Binding BrowseOpenVpnConfigCommand}"
+                                FontSize="10"
+                                Padding="12,6"/>
+                        <Button Grid.Column="4"
+                                Style="{StaticResource SecondaryButton}"
+                                Content="حذف فایل"
+                                Command="{Binding ClearConfigCommand}"
+                                FontSize="10"
+                                Padding="12,6"/>
+                    </Grid>
+
+                    <Border Background="#11FFFFFF" CornerRadius="8" Padding="10,8" Margin="0,6,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="{Binding OpenVpnPrerequisiteText}"
+                                       Foreground="{Binding OpenVpnPrerequisiteColor, Converter={StaticResource StringToColor}}"
+                                       FontSize="10"
+                                       TextWrapping="Wrap"
+                                       FlowDirection="RightToLeft"/>
+                            <Button Grid.Column="2"
+                                    Style="{StaticResource SecondaryButton}"
+                                    Content="دانلود OpenVPN"
+                                    Command="{Binding OpenOpenVpnCommunityDownloadCommand}"
+                                    FontSize="10"
+                                    Padding="10,5"/>
+                        </Grid>
+                    </Border>
+
+                    <Grid Margin="0,6,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="نام کاربری"/>
+                            <TextBox Style="{StaticResource ModernTextBox}"
+                                     Text="{Binding OpenVpnUsername, UpdateSourceTrigger=PropertyChanged}"
+                                     FlowDirection="LeftToRight"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="3">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="رمز عبور"/>
+                            <PasswordBox x:Name="OpenVpnPasswordField"
+                                         Style="{StaticResource ModernPasswordBox}"
+                                         FlowDirection="LeftToRight"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock Text="{Binding ConfigValidationText}"
+                               FontSize="10"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               TextWrapping="Wrap"
+                               Margin="0,6,0,0"/>
+                </StackPanel>
+                <!-- End OpenVPN fields -->
+
+                <Border Background="#11FFFFFF" CornerRadius="8" Padding="10,8" Margin="0,8,0,0">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
@@ -423,6 +579,8 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="6"/>
                                 <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="6"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBox Grid.Column="0" Text="{Binding PingTarget, UpdateSourceTrigger=PropertyChanged}"
                                      Style="{StaticResource ModernTextBox}"
@@ -433,6 +591,11 @@
                                     Command="{Binding TogglePingCommand}"
                                     Style="{StaticResource SecondaryButton}"
                                     FontSize="11" Padding="10,5"/>
+                            <Button Grid.Column="4" Content="{Binding ConnectedServerPingButtonText}"
+                                    Command="{Binding TestConnectedServerPingCommand}"
+                                    Style="{StaticResource SecondaryButton}"
+                                    FontSize="11" Padding="10,5"
+                                    ToolTip="دسترسی به سرور همین اتصال را تست می‌کند"/>
                         </Grid>
                         <TextBlock Text="{Binding PingResult}" FontSize="11"
                                    FontWeight="SemiBold" FlowDirection="LeftToRight"

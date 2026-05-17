@@ -23,6 +23,7 @@ public partial class MainViewModel
         if (_connectionState == ConnectionState.Connecting)
         {
             // Cancel ongoing connection attempt
+            StatusText = "در حال لغو اتصال...";
             _connectionCts?.Cancel();
             return;
         }
@@ -54,6 +55,22 @@ public partial class MainViewModel
             StatusText = "کانفیگ V2Ray را وارد کنید";
             return;
         }
+        if (tunnelType == TunnelType.OpenVpn && string.IsNullOrWhiteSpace(_selectedProfile?.OpenVpnConfig))
+        {
+            Logger.Warning("ConnectAsync: OpenVPN config is empty");
+            StatusText = "کانفیگ OpenVPN (.ovpn) را وارد کنید";
+            return;
+        }
+        if (tunnelType == TunnelType.OpenVpn && !IsOpenVpnCommunityInstalled)
+        {
+            RefreshOpenVpnInstallStatus();
+            if (!IsOpenVpnCommunityInstalled)
+            {
+                Logger.Warning("ConnectAsync: OpenVPN Community openvpn.exe not found");
+                StatusText = "OpenVPN Community نصب نیست؛ ابتدا از لینک رسمی نصب کنید";
+                return;
+            }
+        }
         if (!ValidateMixedProxyPort(out var socksError))
         {
             StatusText = socksError;
@@ -75,7 +92,13 @@ public partial class MainViewModel
 
         IsBusy = true;
         ConnectionState = ConnectionState.Connecting;
-        StatusText = "در حال اتصال...";
+        StatusText = tunnelType == TunnelType.OpenVpn
+            ? "در حال آماده‌سازی OpenVPN..."
+            : "در حال اتصال...";
+
+        // Give WPF one dispatcher turn to render the connecting view before
+        // provider startup does DNS/process/network work.
+        await Task.Yield();
 
         var config = _selectedProfile?.ToServerConfig() ?? new ServerConfig
         {
@@ -85,6 +108,9 @@ public partial class MainViewModel
             PreSharedKey = PreSharedKey,
             TunnelType = _currentTunnelType,
             V2RayConfig = _selectedV2RayConfig,
+            OpenVpnConfig = _selectedOpenVpnConfig,
+            OpenVpnUsername = OpenVpnUsername,
+            OpenVpnPassword = OpenVpnPassword,
             AutoTuneMtu = AutoTuneMtu,
             EnableDnsOptimization = IsDnsOptimizationEnabled,
             EnableGameMode = IsGameModeEnabled
@@ -102,6 +128,7 @@ public partial class MainViewModel
         }
         catch (OperationCanceledException)
         {
+            await CleanupAfterFailedConnectionAsync();
             ConnectionState = ConnectionState.Disconnected;
             StatusText = "اتصال لغو شد";
             IsBusy = false;
@@ -138,7 +165,8 @@ public partial class MainViewModel
             _trafficRouter.Start(
                 _vpnService.Status.VpnInterfaceIndex,
                 _vpnService.Status.VpnLocalIp,
-                _vpnService.Status.VpnServerIp); // actual proxy/VPN server host, resolved by TrafficRouter
+                _vpnService.Status.VpnServerIp,
+                _vpnService.Status.VpnGatewayIp); // actual proxy/VPN server host, resolved by TrafficRouter
 
             _vpnHealthCheckCounter = 0;
             _timer.Start();
@@ -147,11 +175,42 @@ public partial class MainViewModel
         }
         else
         {
-            ConnectionState = ConnectionState.Error;
-            StatusText = _vpnService.Status.Message;
+            var failedState = _vpnService.Status.State;
+            var failedMessage = _vpnService.Status.Message;
+            await CleanupAfterFailedConnectionAsync();
+            if (failedState == ConnectionState.Disconnected)
+            {
+                ConnectionState = ConnectionState.Disconnected;
+                StatusText = failedMessage;
+            }
+            else
+            {
+                ConnectionState = ConnectionState.Error;
+                StatusText = failedMessage;
+            }
         }
 
         IsBusy = false;
+    }
+
+    private async Task CleanupAfterFailedConnectionAsync()
+    {
+        _timer.Stop();
+        _pingCts?.Cancel();
+        IsPinging = false;
+
+        try { await _trafficRouter.StopAsync(); }
+        catch (Exception ex) { Logger.Warning($"CleanupAfterFailedConnectionAsync router cleanup failed: {ex.Message}"); }
+
+        try { await _vpnService.DisconnectAsync(); }
+        catch (Exception ex) { Logger.Warning($"CleanupAfterFailedConnectionAsync VPN cleanup failed: {ex.Message}"); }
+
+        VpnIp = "";
+        VpnAdapterName = "";
+        _isFullRouteEnabled = false;
+        OnPropertyChanged(nameof(IsFullRouteEnabled));
+        OnPropertyChanged(nameof(FullRouteStatusText));
+        RaiseHealthStatusChanged();
     }
 
     private async Task DisconnectAsync()
@@ -372,6 +431,44 @@ public partial class MainViewModel
                 return;
             }
 
+            if (CurrentTunnelType == TunnelType.OpenVpn)
+            {
+                var openVpnEndpoints = ExtractOpenVpnRemoteEndpoints(SelectedOpenVpnConfig).ToList();
+                if (openVpnEndpoints.Count == 0)
+                {
+                    ServerPingResult = "remote سرور در فایل .ovpn پیدا نشد";
+                    return;
+                }
+
+                var tcpEndpoints = openVpnEndpoints
+                    .Where(e => !e.Protocol.Contains("udp", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+                if (tcpEndpoints.Count == 0)
+                {
+                    ServerPingResult = "کانفیگ UDP است؛ تست دقیق قبل از اتصال ممکن نیست";
+                    return;
+                }
+
+                Exception? lastError = null;
+                foreach (var endpointToTest in tcpEndpoints)
+                {
+                    try
+                    {
+                        using var ctsOpenVpn = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                        var msOpenVpn = await MeasureTcpConnectLatencyAsync(endpointToTest.Host, endpointToTest.Port, ctsOpenVpn.Token);
+                        ServerPingResult = $"TCP connect {endpointToTest.Host}:{endpointToTest.Port}  {msOpenVpn} ms";
+                        return;
+                    }
+                    catch (Exception ex) when (ex is OperationCanceledException or SocketException or TimeoutException)
+                    {
+                        lastError = ex;
+                    }
+                }
+
+                ServerPingResult = $"هیچ remote قابل‌دسترسی نبود ({lastError?.Message ?? "timeout"})";
+                return;
+            }
+
             var rawConfig = SelectedV2RayConfig.Trim();
             if (!TryExtractProxyEndpointDetails(rawConfig, out var endpoint, out var error))
             {
@@ -398,7 +495,99 @@ public partial class MainViewModel
         }
     }
 
+    private async Task TestConnectedServerPingAsync()
+    {
+        if (IsTestingConnectedServerPing) return;
+
+        if (IsPinging)
+        {
+            _pingCts?.Cancel();
+            IsPinging = false;
+        }
+
+        IsTestingConnectedServerPing = true;
+        PingResult = "در حال پینگ سرور...";
+
+        try
+        {
+            if (CurrentTunnelType == TunnelType.OpenVpn)
+            {
+                var connectedHost = _vpnService.Status.VpnServerIp;
+                var connectedPort = _vpnService.Status.VpnServerPort;
+                if (!string.IsNullOrWhiteSpace(connectedHost) && connectedPort > 0)
+                {
+                    using var ctsConnectedOpenVpn = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                    var connectedMs = await MeasureTcpConnectLatencyAsync(connectedHost, connectedPort, ctsConnectedOpenVpn.Token);
+                    PingResult = $"سرور OpenVPN: TCP {connectedHost}:{connectedPort}  {connectedMs} ms";
+                    return;
+                }
+
+                if (!TryExtractOpenVpnRemoteEndpoint(SelectedOpenVpnConfig, out var openVpnEndpoint, out var openVpnError))
+                {
+                    PingResult = openVpnError;
+                    return;
+                }
+
+                if (openVpnEndpoint.Protocol.Contains("udp", StringComparison.OrdinalIgnoreCase))
+                {
+                    using var ping = new Ping();
+                    var reply = await ping.SendPingAsync(openVpnEndpoint.Host, 3000);
+                    PingResult = reply.Status == IPStatus.Success
+                        ? $"سرور OpenVPN: ICMP {reply.RoundtripTime} ms"
+                        : $"سرور OpenVPN: ICMP {reply.Status}";
+                    return;
+                }
+
+                using var ctsOpenVpn = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                var msOpenVpn = await MeasureTcpConnectLatencyAsync(openVpnEndpoint.Host, openVpnEndpoint.Port, ctsOpenVpn.Token);
+                PingResult = $"سرور OpenVPN: TCP {openVpnEndpoint.Host}:{openVpnEndpoint.Port}  {msOpenVpn} ms";
+                return;
+            }
+
+            if (CurrentTunnelType == TunnelType.L2tpIpsec)
+            {
+                var host = ServerAddress.Trim();
+                if (string.IsNullOrWhiteSpace(host))
+                {
+                    PingResult = "آدرس سرور خالی است";
+                    return;
+                }
+
+                using var ping = new Ping();
+                var reply = await ping.SendPingAsync(host, 3000);
+                PingResult = reply.Status == IPStatus.Success
+                    ? $"سرور L2TP: ICMP {reply.RoundtripTime} ms"
+                    : $"سرور L2TP: ICMP {reply.Status}";
+                return;
+            }
+
+            if (!TryExtractProxyEndpointDetails(SelectedV2RayConfig.Trim(), out var endpoint, out var error))
+            {
+                PingResult = error;
+                return;
+            }
+
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            var ms = await MeasureEndpointLatencyAsync(endpoint, cts.Token);
+            var mode = endpoint.UseTls ? "TLS handshake" : "TCP connect";
+            PingResult = $"سرور: {mode} {endpoint.Server}:{endpoint.Port}  {ms} ms";
+        }
+        catch (OperationCanceledException)
+        {
+            PingResult = "پینگ سرور timeout شد";
+        }
+        catch (Exception ex)
+        {
+            PingResult = $"خطا: {ex.Message}";
+        }
+        finally
+        {
+            IsTestingConnectedServerPing = false;
+        }
+    }
+
     private readonly record struct ProxyEndpoint(string Server, int Port, bool UseTls, string? Sni);
+    private readonly record struct OpenVpnRemoteEndpoint(string Host, int Port, string Protocol);
 
     private static async Task<long> MeasureEndpointLatencyAsync(ProxyEndpoint endpoint, CancellationToken ct)
     {
@@ -421,6 +610,70 @@ public partial class MainViewModel
 
         sw.Stop();
         return sw.ElapsedMilliseconds;
+    }
+
+    private static async Task<long> MeasureTcpConnectLatencyAsync(string host, int port, CancellationToken ct)
+    {
+        using var tcp = new TcpClient();
+        tcp.NoDelay = true;
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        await tcp.ConnectAsync(host, port, ct);
+        sw.Stop();
+        return sw.ElapsedMilliseconds;
+    }
+
+    private static bool TryExtractOpenVpnRemoteEndpoint(
+        string config,
+        out OpenVpnRemoteEndpoint endpoint,
+        out string error)
+    {
+        endpoint = default;
+        error = "";
+
+        if (string.IsNullOrWhiteSpace(config))
+        {
+            error = "فایل .ovpn انتخاب نشده است";
+            return false;
+        }
+
+        foreach (var endpointToTest in ExtractOpenVpnRemoteEndpoints(config))
+        {
+            endpoint = endpointToTest;
+            return true;
+        }
+
+        error = "remote سرور در فایل .ovpn پیدا نشد";
+        return false;
+    }
+
+    private static IEnumerable<OpenVpnRemoteEndpoint> ExtractOpenVpnRemoteEndpoints(string config)
+    {
+        if (string.IsNullOrWhiteSpace(config))
+            yield break;
+
+        foreach (var line in config.Split('\n'))
+        {
+            var raw = line.Trim();
+            if (string.IsNullOrWhiteSpace(raw) || raw.StartsWith("#") || raw.StartsWith(";"))
+                continue;
+            if (!raw.StartsWith("remote ", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var parts = raw.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length < 2)
+                continue;
+
+            var host = parts[1];
+            var port = parts.Length >= 3 && int.TryParse(parts[2], out var parsedPort)
+                ? parsedPort
+                : 1194;
+            var protocol = parts.Length >= 4 ? parts[3] : "";
+
+            if (string.IsNullOrWhiteSpace(host) || port <= 0 || port > 65535)
+                continue;
+
+            yield return new OpenVpnRemoteEndpoint(host, port, protocol);
+        }
     }
 
     private static bool TryExtractProxyEndpoint(string config, out string server, out int port, out string error)

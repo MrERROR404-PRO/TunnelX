@@ -11,9 +11,16 @@ TunnelX is a free and open-source Windows split-tunneling client built by **MaxF
 - App-based split tunneling for selected Windows processes
 - Full-route mode for whole-system tunneling
 - Xray-core / sing-box based V2Ray workflows
+- OpenVPN Community support via user-provided `.ovpn` files for app-based split tunneling
 - Local SOCKS5 proxy for tools that need `127.0.0.1`
 - DNS redirect, IPv6 blocking, leak guard, route diagnostics, and traffic history
 - Persian-first Windows desktop UI
+
+## OpenVPN
+
+TunnelX can run an installed **OpenVPN Community** `openvpn.exe` with a user-selected `.ovpn` profile, then apply its own split-tunneling policy so only selected apps and included destinations use the OpenVPN tunnel.
+
+OpenVPN is not bundled with TunnelX. Install OpenVPN Community separately, select the `.ovpn` file in TunnelX, and enter the OpenVPN username/password if the server requires credentials. OpenVPN Connect alone is not enough for this mode because it manages routes and DNS through its own client.
 
 ## Screenshots
 
