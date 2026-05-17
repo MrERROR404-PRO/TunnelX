@@ -2,8 +2,6 @@
 
 ## Unreleased
 
-## 1.2.26 - 2026-05-17
-
 - Added OpenVPN Community support as an external tunnel provider for split tunneling.
 - Added `.ovpn` file selection, OpenVPN username/password fields, install detection, and clearer Persian guidance in the connection and help screens.
 - Added split-compatible OpenVPN config preparation with route/DNS push filtering, credential file handling without UTF-8 BOM, remote candidate filtering, and faster retry behavior.
