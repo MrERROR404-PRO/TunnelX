@@ -2,6 +2,48 @@
 
 ## Unreleased
 
+## 1.2.31 - 2026-05-18
+
+- Update README contact and localization notes
+- Prepare bilingual UI and reliability update
+- Fix release workflow for prepared versions
+- Fix OpenVPN reconnect routing
+- Prepare OpenVPN notes for release workflow
+- Merge pull request #17 from MaxiFan/feature/openvpn-external
+- Merge main into OpenVPN feature branch
+- Add OpenVPN split-tunnel support
+- Merge pull request #13 from BlacKSnowDot0/pr-clean
+- Merge pull request #16 from mohammad-parvizi-dev/main
+- Improve tab headers, theme styling, and tray notifications
+- Add startup and auto-connect app settings
+- feat(proxy): SOCKS5/HTTP via V2Ray/sing-box, add MixedProxyServer, remove standalone proxy types and local auth
+- Fix release tag existence check
+- Add release notes for next release
+- Automate release versioning and changelog
+- Fix release provenance workflow syntax
+- Document GitHub Actions release provenance
+- Update GitHub Actions versions
+- Allow release workflow to update assets
+- Add GitHub Actions release workflow
+- Add README screenshots
+- Fix Persian README RTL rendering
+- Add Persian README
+- Improve footer project attribution
+- Clean nullable warnings in traffic router
+- Clarify tunnel-only traffic accounting
+- Release v1.2.23
+- Add update checks and tray notifications
+- Clarify protected leak attempts in health status
+- Bump version to 1.2.22
+- Fix help donation actions and remove internal docs
+- Update DONATE.md
+- Add roadmap for system preflight checks
+- Document standalone runtime behavior
+- Keep donation details out of README
+- Document platform support and maintenance disclaimer
+- Remove one-time and unused release files
+- Prepare TunnelX for open-source release
+
 ## 1.2.30 - 2026-05-18
 
 ### English
@@ -116,6 +158,7 @@
 - Added in-app GitHub and donation links.
 - Added project metadata for MaxFan and GPL-3.0-or-later licensing.
 - Improved leak logging and traffic accounting in recent internal builds.
+
 
 
 
