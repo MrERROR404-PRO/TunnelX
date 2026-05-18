@@ -2,23 +2,27 @@
 
 [فارسی](README.fa.md) | English | [Русский](#русский) | [简体中文](#简体中文)
 
-TunnelX is a free and open-source Windows split-tunneling client built by **MaxFan**. It routes selected apps, selected destinations, or the whole system through supported tunnel cores while keeping local and excluded destinations on the normal network path.
+TunnelX is a free and open-source Windows split-tunneling client built by **MaxFan**. It routes selected apps, selected destinations, or the whole system through supported tunnel cores while keeping local and excluded destinations on the normal network path. The app supports Persian and English UI modes with automatic system-language detection and correct RTL/LTR layout handling.
 
 ## Русский
 
-TunnelX — бесплатный клиент split tunneling для Windows от **MaxFan**. Он позволяет направлять через VPN, V2Ray/Xray, OpenVPN или SOCKS5/HTTP Proxy только выбранные приложения, выбранные домены/IP или весь системный трафик.
+TunnelX — бесплатный клиент split tunneling для Windows от **MaxFan**. Он позволяет направлять через VPN, V2Ray/Xray, OpenVPN или SOCKS5/HTTP Proxy только выбранные приложения, выбранные домены/IP или весь системный трафик. Интерфейс поддерживает персидский и английский языки с автоматическим выбором языка системы и корректным RTL/LTR отображением.
 
 Основные возможности: профили L2TP/IPsec, V2Ray/Xray, SOCKS5/HTTP Proxy и OpenVPN Community; выбор приложений для туннеля; правила include/exclude для доменов и IP; режим Full Route; локальный прокси `127.0.0.1`; отображение публичного выходного IP; история трафика; защита от DNS/IPv6/leak проблем.
 
 Для обычного использования скачайте последний standalone-файл из [GitHub Releases](https://github.com/MaxiFan/TunnelX/releases/latest), запустите TunnelX от имени Administrator, создайте профиль подключения, выберите приложения для туннеля и подключитесь. Отдельная установка .NET Runtime для standalone-сборки не требуется.
 
+Связаться с автором можно в Telegram: [t.me/maxifaan](https://t.me/maxifaan).
+
 ## 简体中文
 
-TunnelX 是由 **MaxFan** 构建的免费 Windows 分流隧道客户端。它可以只让选定的应用、指定的域名/IP，或整个系统流量通过 VPN、V2Ray/Xray、OpenVPN 或 SOCKS5/HTTP Proxy，同时让本地或排除的目标继续走普通网络。
+TunnelX 是由 **MaxFan** 构建的免费 Windows 分流隧道客户端。它可以只让选定的应用、指定的域名/IP，或整个系统流量通过 VPN、V2Ray/Xray、OpenVPN 或 SOCKS5/HTTP Proxy，同时让本地或排除的目标继续走普通网络。应用支持波斯语和英语界面，可自动检测系统语言并正确处理 RTL/LTR 布局。
 
 主要功能包括：L2TP/IPsec、V2Ray/Xray、SOCKS5/HTTP Proxy 和 OpenVPN Community 配置文件；按应用分流；域名/IP include 与 exclude 规则；Full Route 全局模式；本地 `127.0.0.1` 代理；公网出口 IP 显示；流量历史；DNS、IPv6 与泄漏防护诊断。
 
 普通用户可以从 [GitHub Releases](https://github.com/MaxiFan/TunnelX/releases/latest) 下载最新 standalone 版本，以 Administrator 权限运行 TunnelX，创建连接配置，选择需要进入隧道的应用，然后连接。standalone 版本不需要单独安装 .NET Runtime。
+
+可通过 Telegram 联系作者：[t.me/maxifaan](https://t.me/maxifaan)。
 
 ## Features
 
@@ -31,7 +35,8 @@ TunnelX 是由 **MaxFan** 构建的免费 Windows 分流隧道客户端。它可
 - Local SOCKS5 proxy for tools that need `127.0.0.1`
 - DNS redirect, IPv6 blocking, leak guard, route diagnostics, and traffic history
 - Multiple profiles, duplicate/edit flows, server tests, public exit IP detection, and release update checks
-- Persian-first Windows desktop UI
+- Persian and English desktop UI with automatic language detection, manual language switching, and correct RTL/LTR layout behavior
+- Dynamic local port selection for V2Ray/Xray internals to reduce `2080/2081` binding conflicts
 
 ## Quick Start
 
@@ -137,9 +142,11 @@ TunnelX is licensed under **GPL-3.0-or-later**. Commercial use is allowed under 
 
 TunnelX is free and open-source. Donations are optional and help keep the project maintained.
 
+For direct contact, support requests, private customization, or paid development work, message MaxFan on Telegram: [t.me/maxifaan](https://t.me/maxifaan).
+
 Paid services may be available separately for private support, deployment help, custom builds, company-specific customization, or development of a similar application. These paid services do not limit the rights granted by the GPL license.
 
-Use the GitHub funding button or see `docs/DONATE.md` for donation and contact options.
+Use the GitHub funding button or see `docs/DONATE.md` for donation options.
 
 ## Safety Notice
 
