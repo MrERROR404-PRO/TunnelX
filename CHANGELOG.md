@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.2.30 - 2026-05-18
+
 ### English
 
 - Added bilingual Persian/English UI switching with automatic system-language detection, persisted language selection, RTL/LTR layout handling, and localized dialogs, tray text, runtime status messages, help content, and profile/app/routing views.
@@ -114,5 +116,6 @@
 - Added in-app GitHub and donation links.
 - Added project metadata for MaxFan and GPL-3.0-or-later licensing.
 - Improved leak logging and traffic accounting in recent internal builds.
+
 
 
